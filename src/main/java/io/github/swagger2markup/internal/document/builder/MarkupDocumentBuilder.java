@@ -27,6 +27,7 @@ import io.github.swagger2markup.markup.builder.MarkupLanguage;
 import io.github.swagger2markup.markup.builder.MarkupTableColumn;
 import io.github.swagger2markup.utils.IOUtils;
 import io.swagger.models.Model;
+import io.swagger.models.properties.MapProperty;
 import io.swagger.models.properties.Property;
 import io.swagger.util.Json;
 import org.apache.commons.collections4.MapUtils;
@@ -200,19 +201,31 @@ public abstract class MarkupDocumentBuilder {
             for (String propertyName : propertyNames) {
                 Property property = properties.get(propertyName);
                 Type propertyType = PropertyUtils.getType(property, definitionDocumentResolver);
+
+                // Check if property is of type Doc for Array
                 if (propertyType instanceof  ArrayType && ((ArrayType) propertyType).getOfType() instanceof  RefType) {
                     RefType refType = (RefType) ((ArrayType) propertyType).getOfType();
                     if (refType.getRefType().getName()!= null && refType.getRefType().getName().contains("Doc")) {
                         Map<String, Model> definitions = globalContext.getSwagger().getDefinitions();
-                        Model docModel = definitions.get(refType.getRefType().getName());
-                        Map<String, Property> propertiesTest = docModel.getProperties();
+                        Map<String, Property> propertiesTest = definitions.get(refType.getRefType().getName()).getProperties();
                         Property propertyDoc = propertiesTest.entrySet().iterator().next().getValue();
                         ((ArrayType) propertyType).setOfType(PropertyUtils.getType(propertyDoc, definitionDocumentResolver));
                     }
                 }
+                // Check if property is of type Doc for Map
+                if (propertyType instanceof MapType && ((MapType) propertyType).getValueType() instanceof  RefType) {
+                    RefType refType = (RefType) ((MapType) propertyType).getValueType();
+                    if (refType.getRefType().getName()!= null && refType.getRefType().getName().contains("Doc")) {
+                        Map<String, Model> definitions = globalContext.getSwagger().getDefinitions();
+                        Map<String, Property> propertiesTest = definitions.get(refType.getRefType().getName()).getProperties();
+                        Property propertyDoc = propertiesTest.entrySet().iterator().next().getValue();
+                        ((MapType) propertyType).setValueType(PropertyUtils.getType(propertyDoc, definitionDocumentResolver));
+                    }
+                }
+
                 propertyType = createInlineType(propertyType, propertyName, uniquePrefix + " " + propertyName, inlineDefinitions);
                 
-                Object example = PropertyUtils.generateExample(property, markupDocBuilder, globalContext.getSwagger().getDefinitions());
+                Object example = PropertyUtils.getExample(config.isGeneratedExamplesEnabled(), property, markupDocBuilder,globalContext.getSwagger().getDefinitions() );
 
                 Object defaultValue = PropertyUtils.getDefaultValue(property);
                 

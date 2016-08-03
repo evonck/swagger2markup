@@ -269,6 +269,42 @@ public final class PropertyUtils {
     }
 
     /**
+     * Return example display string for the given {@code property}.
+     *
+     * @param generateMissingExamples specifies if missing examples should be generated
+     * @param property         property
+     * @param markupDocBuilder doc builder
+     * @return property example display string
+     */
+    public static Object getExample(boolean generateMissingExamples, Property property, MarkupDocBuilder markupDocBuilder, Map<String, Model> definitions) {
+        Validate.notNull(property, "property must not be null");
+        Object examplesValue = null;
+        if (property.getExample() != null) {
+            examplesValue = property.getExample();
+        } else if (property instanceof MapProperty) {
+            Property additionalProperty = ((MapProperty) property).getAdditionalProperties();
+            if (additionalProperty.getExample() != null) {
+                examplesValue = additionalProperty.getExample();
+            } else if (generateMissingExamples) {
+                Map<String, Object> exampleMap = new HashMap<>();
+                exampleMap.put("string", generateExample(additionalProperty, markupDocBuilder, definitions));
+                examplesValue = exampleMap;
+            }
+        } else if (property instanceof ArrayProperty) {
+            if (generateMissingExamples) {
+                Property itemProperty = ((ArrayProperty) property).getItems();
+                List<Object> exampleArray = new ArrayList<>();
+                exampleArray.add(generateExample(itemProperty, markupDocBuilder, definitions));
+                examplesValue = exampleArray;
+            }
+        } else if (generateMissingExamples) {
+            examplesValue = generateExample(property, markupDocBuilder);
+        }
+
+        return examplesValue;
+    }
+
+    /**
      * Generate a default example value for property.
      *
      * @param property         property
@@ -310,7 +346,12 @@ public final class PropertyUtils {
             case "boolean":
                 return true;
             case "string":
-                return "string";
+                switch (property.getFormat()){
+                    case "uuid":
+                        return "123e4567-e89b-12d3-a456-426655440000";
+                    default:
+                        return "string";
+                }
             case "ref":
                 if (property instanceof RefProperty) {
                     if ( ((RefProperty) property).getSimpleRef().contains("Doc") ) {
