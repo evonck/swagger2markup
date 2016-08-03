@@ -56,7 +56,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
     private final String POLYMORPHISM_COLUMN;
     private final Map<ObjectTypePolymorphism.Nature, String> POLYMORPHISM_NATURE;
     private final String TYPE_COLUMN;
-    private static final List<String> IGNORED_DEFINITIONS = Collections.singletonList("Void");
+    private static final List<String> IGNORED_DEFINITIONS = Collections.singletonList("PaginatedResultTeam");
 
     public DefinitionsDocumentBuilder(Swagger2MarkupConverter.Context context, Swagger2MarkupExtensionRegistry extensionRegistry, Path outputPath) {
         super(context, extensionRegistry, outputPath);
@@ -92,7 +92,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
     public MarkupDocument build() {
         if (MapUtils.isNotEmpty(globalContext.getSwagger().getDefinitions())) {
             applyDefinitionsDocumentExtension(new Context(Position.DOCUMENT_BEFORE, this.markupDocBuilder));
-            buildDefinitionsTitle(DEFINITIONS);
+//            buildDefinitionsTitle(globalContext.getSwagger().getInfo().getTitle());
             applyDefinitionsDocumentExtension(new Context(Position.DOCUMENT_BEGIN, this.markupDocBuilder));
             buildDefinitionsSection();
             applyDefinitionsDocumentExtension(new Context(Position.DOCUMENT_END, this.markupDocBuilder));
@@ -107,6 +107,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
             Model model = globalContext.getSwagger().getDefinitions().get(definitionName);
             if (isNotBlank(definitionName)) {
                 if (checkThatDefinitionIsNotInIgnoreList(definitionName)) {
+                    definitionName = "The " + definitionName.toLowerCase() + " object";
                     buildDefinition(definitionName, model);
                     if (logger.isInfoEnabled()) {
                         logger.info("Definition processed : '{}'", definitionName);
@@ -121,7 +122,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
     }
 
     private void buildDefinitionsTitle(String title) {
-        this.markupDocBuilder.sectionTitleWithAnchorLevel1(title, DEFINITIONS_ANCHOR);
+        this.markupDocBuilder.documentTitle(title);
     }
 
     /**
@@ -179,6 +180,9 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
      * @return true if the definition can be processed
      */
     private boolean checkThatDefinitionIsNotInIgnoreList(String definitionName) {
+        if (definitionName.contains("PaginatedResult") || definitionName.contains("Doc") ) {
+            return false;
+        }
         return !IGNORED_DEFINITIONS.contains(definitionName);
     }
 
@@ -217,9 +221,8 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
      * @param docBuilder the docbuilder do use for output
      */
     private void buildDefinitionTitle(String title, String anchor, MarkupDocBuilder docBuilder) {
-        docBuilder.sectionTitleWithAnchorLevel2(title, anchor);
+        docBuilder.sectionTitleWithAnchorLevel1(title, anchor);
     }
-    
 
     /**
      * Builds the type informations of a definition

@@ -81,18 +81,18 @@ public class OverviewDocumentBuilder extends MarkupDocumentBuilder {
         Info info = swagger.getInfo();
         buildDocumentTitle(info.getTitle());
         applyOverviewDocumentExtension(new Context(Position.DOCUMENT_BEFORE, this.markupDocBuilder));
-        buildOverviewTitle(OVERVIEW);
+//        buildOverviewTitle(OVERVIEW);
         applyOverviewDocumentExtension(new Context(Position.DOCUMENT_BEGIN, this.markupDocBuilder));
         buildDescriptionParagraph(info.getDescription(), this.markupDocBuilder);
-        buildVersionInfoSection(info.getVersion());
-        buildContactInfoSection(info.getContact());
-        buildLicenseInfoSection(info.getLicense(), info.getTermsOfService());
-        buildUriSchemeSection(swagger);
-        buildTagsSection(swagger.getTags());
-        buildConsumesSection(swagger.getConsumes());
-        buildProducesSection(swagger.getProduces());
-        applyOverviewDocumentExtension(new Context(Position.DOCUMENT_END, this.markupDocBuilder));
-        applyOverviewDocumentExtension(new Context(Position.DOCUMENT_AFTER, this.markupDocBuilder));
+//        buildVersionInfoSection(info.getVersion());
+//        buildContactInfoSection(info.getContact());
+//        buildLicenseInfoSection(info.getLicense(), info.getTermsOfService());
+//        buildUriSchemeSection(swagger);
+//        buildTagsSection(swagger.getTags());
+//        buildConsumesSection(swagger.getConsumes());
+//        buildProducesSection(swagger.getProduces());
+//        applyOverviewDocumentExtension(new Context(Position.DOCUMENT_END, this.markupDocBuilder));
+//        applyOverviewDocumentExtension(new Context(Position.DOCUMENT_AFTER, this.markupDocBuilder));
         return new MarkupDocument(markupDocBuilder);
     }
 

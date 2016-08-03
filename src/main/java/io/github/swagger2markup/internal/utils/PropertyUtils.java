@@ -18,6 +18,7 @@ package io.github.swagger2markup.internal.utils;
 import com.google.common.base.Function;
 import io.github.swagger2markup.internal.type.*;
 import io.github.swagger2markup.markup.builder.MarkupDocBuilder;
+import io.swagger.models.Model;
 import io.swagger.models.properties.*;
 import io.swagger.models.refs.RefFormat;
 import org.apache.commons.collections4.CollectionUtils;
@@ -286,6 +287,36 @@ public final class PropertyUtils {
                 return "string";
             case "ref":
                 if (property instanceof RefProperty) {
+                    return markupDocBuilder.copy(false).crossReference(((RefProperty) property).getSimpleRef()).toString();
+                }
+            default:
+                return property.getType();
+        }
+    }
+
+    /**
+     * Generate a default example value for property and Doc mock.
+     *
+     * @param property         property
+     * @param markupDocBuilder doc builder
+     * @return a generated example for the property
+     */
+    public static Object generateExample(Property property, MarkupDocBuilder markupDocBuilder, Map<String, Model> definitions) {
+        switch (property.getType()) {
+            case "integer":
+                return 0;
+            case "number":
+                return 0.0;
+            case "boolean":
+                return true;
+            case "string":
+                return "string";
+            case "ref":
+                if (property instanceof RefProperty) {
+                    if ( ((RefProperty) property).getSimpleRef().contains("Doc") ) {
+                        // Get Example from first Param
+                        return definitions.get(((RefProperty) property).getSimpleRef()).getProperties().entrySet().iterator().next().getValue().getExample();
+                    }
                     return markupDocBuilder.copy(false).crossReference(((RefProperty) property).getSimpleRef()).toString();
                 }
             default:

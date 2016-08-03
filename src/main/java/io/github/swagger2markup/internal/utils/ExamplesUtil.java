@@ -49,6 +49,9 @@ public class ExamplesUtil {
         Map<String, Response> responses = operation.getResponses();
         if (responses != null)
             for (Map.Entry<String, Response> responseEntry : responses.entrySet()) {
+                if ( Integer.parseInt(responseEntry.getKey()) >= 300) {
+                    continue;
+                }
                 Response response = responseEntry.getValue();
                 Object example = response.getExamples();
                 if (example == null) {
@@ -63,12 +66,18 @@ public class ExamplesUtil {
                         if (example == null && generateMissingExamples) {
                             example = PropertyUtils.generateExample(schema, markupDocBuilder);
                         }
+                        if (schema.getExample() == null && example!= null) {
+                            schema.setExample(example);
+                        }
                     }
                 }
 
                 if (example != null)
                     examples.put(responseEntry.getKey(), example);
 
+                if(response.getExamples() == null && example != null) {
+                    response.setExamples(examples);
+                }
             }
 
         return examples;
@@ -184,6 +193,10 @@ public class ExamplesUtil {
         }
         return example;
     }
+
+
+
+
 
     private static Map<String, Property> getPropertiesForComposedModel(ComposedModel model, Map<String, Model> definitions) {
         Map<String, Property> combinedProperties;

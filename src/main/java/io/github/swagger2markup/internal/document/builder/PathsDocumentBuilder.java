@@ -33,8 +33,11 @@ import io.github.swagger2markup.model.PathOperation;
 import io.github.swagger2markup.spi.PathsDocumentExtension;
 import io.swagger.models.*;
 import io.swagger.models.auth.SecuritySchemeDefinition;
+import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.Parameter;
+import io.swagger.models.parameters.RefParameter;
 import io.swagger.models.properties.Property;
+import io.swagger.models.properties.RefProperty;
 import io.swagger.util.Json;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -67,11 +70,17 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
     private final String PATHS;
     private final String RESOURCES;
     private final String PARAMETERS;
+    private final String REQUEST_HEADER;
+    private final String ARGUMENTS;
     private final String BODY_PARAMETER;
     private final String RESPONSES;
     private final String HEADERS_COLUMN;
     private final String EXAMPLE_REQUEST;
+    private final String EXAMPLE_REQUEST_SLATE;
     private final String EXAMPLE_RESPONSE;
+    private final String EXAMPLE_RESPONSE_SLATE;
+    private final String DEFINITIONS;
+    private final String TOKEN;
 
     private final String SECURITY;
     private final String TYPE_COLUMN;
@@ -79,6 +88,12 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 
     private final String DEPRECATED_OPERATION;
     private final String UNKNOWN;
+    private final String HEADER;
+    private final String PATH;
+    private final String QUERY;
+    private final String BODY;
+
+    public static String basePath;
 
     private static final String PATHS_ANCHOR = "paths";
 
@@ -87,10 +102,12 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 
         ResourceBundle labels = ResourceBundle.getBundle("io/github/swagger2markup/lang/labels", config.getOutputLanguage().toLocale());
         RESPONSE = labels.getString("response");
+        REQUEST_HEADER = "HTTP Request";
         REQUEST = labels.getString("request");
         PATHS = labels.getString("paths");
         RESOURCES = labels.getString("resources");
         PARAMETERS = labels.getString("parameters");
+        ARGUMENTS = labels.getString("arguments");
         BODY_PARAMETER = labels.getString("body_parameter");
         RESPONSES = labels.getString("responses");
         HEADERS_COLUMN = labels.getString("headers_column");
@@ -101,6 +118,14 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         HTTP_CODE_COLUMN = labels.getString("http_code_column");
         DEPRECATED_OPERATION = labels.getString("operation.deprecated");
         UNKNOWN = labels.getString("unknown");
+        DEFINITIONS = ">Definitions:\n";
+        EXAMPLE_REQUEST_SLATE = ">Example request:\n";
+        EXAMPLE_RESPONSE_SLATE=">Example Response:\n";
+        HEADER = "header";
+        TOKEN = "token";
+        PATH = "path";
+        BODY = "body";
+        QUERY = "query";
 
         if (config.isGeneratedExamplesEnabled()) {
             if (logger.isDebugEnabled()) {
@@ -131,10 +156,11 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      */
     @Override
     public MarkupDocument build() {
+        basePath = globalContext.getSwagger().getSchemes().get(0).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost();
         Map<String, Path> paths = globalContext.getSwagger().getPaths();
         if (MapUtils.isNotEmpty(paths)) {
             applyPathsDocumentExtension(new Context(Position.DOCUMENT_BEFORE, this.markupDocBuilder));
-            buildPathsTitle();
+//            buildPathsTitle();
             applyPathsDocumentExtension(new Context(Position.DOCUMENT_BEGIN, this.markupDocBuilder));
             buildsPathsSection(paths);
             applyPathsDocumentExtension(new Context(Position.DOCUMENT_END, this.markupDocBuilder));
@@ -154,7 +180,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
                 Multimap<String, PathOperation> operationsGroupedByTag = TagUtils.groupOperationsByTag(pathOperations, config.getTagOrdering(), config.getOperationOrdering());
                 Map<String, Tag> tagsMap = convertTagsListToMap(globalContext.getSwagger().getTags());
                 for (String tagName : operationsGroupedByTag.keySet()) {
-                    this.markupDocBuilder.sectionTitleWithAnchorLevel2(WordUtils.capitalize(tagName), tagName + "_resource");
+//                    this.markupDocBuilder.sectionTitleWithAnchorLevel1(WordUtils.capitalize(tagName), tagName + "_resource");
 
                     Optional<String> tagDescription = getTagDescription(tagsMap, tagName);
                     if (tagDescription.isPresent()) {
@@ -273,14 +299,15 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             buildDescriptionSection(operation, docBuilder);
             inlineDefinitions(buildParametersSection(operation, docBuilder), operation.getPath() + " " + operation.getMethod(), docBuilder);
             inlineDefinitions(buildBodyParameterSection(operation, docBuilder), operation.getPath() + " " + operation.getMethod(), docBuilder);
+            buildExamplesResponseSection(operation,docBuilder);
             inlineDefinitions(buildResponsesSection(operation, docBuilder), operation.getPath() + " " + operation.getMethod(), docBuilder);
-            buildConsumesSection(operation, docBuilder);
-            buildProducesSection(operation, docBuilder);
-            buildTagsSection(operation, docBuilder);
-            if (config.isPathSecuritySectionEnabled()) {
-            	buildSecuritySchemeSection(operation, docBuilder);
-            }
-            buildExamplesSection(operation, docBuilder);
+//            buildConsumesSection(operation, docBuilder);
+//            buildProducesSection(operation, docBuilder);
+//            buildTagsSection(operation, docBuilder);
+//            if (config.isPathSecuritySectionEnabled()) {
+//            	buildSecuritySchemeSection(operation, docBuilder);
+//            }
+//          buildExamplesSection(operation, docBuilder);
             applyPathsDocumentExtension(new Context(Position.OPERATION_END, docBuilder, operation));
             applyPathsDocumentExtension(new Context(Position.OPERATION_AFTER, docBuilder, operation));
         }
@@ -326,10 +353,8 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      */
     private void buildOperationTitle(PathOperation operation, MarkupDocBuilder docBuilder) {
         buildOperationTitle(operation.getTitle(), operation.getId(), docBuilder);
-        if (operation.getTitle().equals(operation.getOperation().getSummary())) {
-            docBuilder.block(operation.getMethod() + " " + operation.getPath(), MarkupBlockStyle.LITERAL);
-        }
     }
+
 
     /**
      * Adds a operation title to the document.
@@ -340,9 +365,9 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      */
     private void buildOperationTitle(String title, String anchor, MarkupDocBuilder docBuilder) {
         if (config.getPathsGroupedBy() == GroupBy.AS_IS) {
-            docBuilder.sectionTitleWithAnchorLevel2(title, anchor);
+            docBuilder.sectionTitleWithAnchorLevel1(title, anchor);
         } else {
-            docBuilder.sectionTitleWithAnchorLevel3(title, anchor);
+            docBuilder.sectionTitleWithAnchorLevel1(title, anchor);
         }
     }
 
@@ -356,7 +381,15 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         if (config.getPathsGroupedBy() == GroupBy.AS_IS) {
             docBuilder.sectionTitleLevel3(title);
         } else {
+            docBuilder.sectionTitleLevel2(title);
+        }
+    }
+
+    private void buildSubSectionTitle(String title, MarkupDocBuilder docBuilder) {
+        if (config.getPathsGroupedBy() == GroupBy.AS_IS) {
             docBuilder.sectionTitleLevel4(title);
+        } else {
+            docBuilder.sectionTitleLevel3(title);
         }
     }
 
@@ -389,11 +422,36 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 
         applyPathsDocumentExtension(new Context(Position.OPERATION_DESCRIPTION_BEFORE, docBuilder, operation));
         if (isNotBlank(descriptionContent)) {
-            buildSectionTitle(DESCRIPTION, docBuilder);
+//            buildSectionTitle(DESCRIPTION, docBuilder);
             docBuilder.text(descriptionContent);
+        }
+        if (operation.getTitle().equals(operation.getOperation().getSummary())) {
+            docBuilder.textLine(EXAMPLE_REQUEST_SLATE);
+            buildExamplesCurlSectionInfo(operation,docBuilder);
+            buildPath(operation.getMethod().toString(),operation.getPath(),docBuilder);
         }
         applyPathsDocumentExtension(new Context(Position.OPERATION_DESCRIPTION_AFTER, docBuilder, operation));
     }
+
+    /**
+     * Adds path operation title to the document.
+     *
+     * @param method      the path method
+     * @param path        path to the ressource
+     * @param docBuilder the MarkupDocBuilder to use
+     */
+    private void buildPath(String method, String path, MarkupDocBuilder docBuilder) {
+        List<Scheme> schemes = globalContext.getSwagger().getSchemes();
+//        if (schemes != null ){
+//            docBuilder.block(method + " " + schemes.get(0).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost() + path, MarkupBlockStyle.LITERAL );
+//        }
+        buildSectionTitle(REQUEST_HEADER, docBuilder);
+        for (int i=0; i<  schemes.size(); i++) {
+            docBuilder.textLine("`" +method + " " + schemes.get(i).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost() + path + "`");
+            docBuilder.textLine(" ");
+        }
+    }
+
 
     /**
      * Filter parameters to display in parameters section
@@ -464,7 +522,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 
         applyPathsDocumentExtension(new Context(Position.OPERATION_PARAMETERS_BEFORE, docBuilder, operation));
         if (isNotBlank(parametersContent)) {
-            buildSectionTitle(PARAMETERS, docBuilder);
+            buildSectionTitle(ARGUMENTS, docBuilder);
             docBuilder.text(parametersContent);
         }
         applyPathsDocumentExtension(new Context(Position.OPERATION_PARAMETERS_AFTER, docBuilder, operation));
@@ -555,6 +613,106 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         }
     }
 
+
+    /**
+     * Builds the GET curl example section of a Swagger Operation.
+     *
+     * @param operation  the Swagger Operation
+     * @param docBuilder the docbuilder do use for output
+     */
+    private void buildExamplesCurlSectionInfo(PathOperation operation, MarkupDocBuilder docBuilder) {
+        String curlValue = "curl \"" + basePath  + operation.getPath() +"\"" ;
+        String hederValue = "";
+        String bodyValue = "";
+        String queryValue = null;
+        List<Parameter> parameters = operation.getOperation().getParameters();
+        for (int i=0; i< parameters.size(); i++ ) {
+            if ( parameters.get(i).getRequired() ) {
+                String value = null;
+                if (parameters.get(i).getDescription() != null) {
+                    value = getExampleFromDescription(parameters.get(i).getDescription());
+                }
+                if (parameters.get(i).getIn().equals(BODY)) {
+                    BodyParameter bodyParameter = (BodyParameter)parameters.get(i);
+                    if (bodyParameter.getSchema() != null ) {
+                        RefModel ref = (RefModel) bodyParameter.getSchema();
+                        value = Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(),globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
+                    }
+                }
+                if (value == null) {
+                    continue;
+                }
+
+                if (parameters.get(i).getIn().equals(PATH)) {
+                    curlValue = curlValue.replace("{" + parameters.get(i).getName() + "}", value);
+                    continue;
+                }
+                if (parameters.get(i).getIn().equals(HEADER) ) {
+                    if (!hederValue.equals("")) {
+                        hederValue+= "\\ \n";
+                    }
+                    hederValue += "-H \"" + parameters.get(i).getName()+":" + value +" \"" ;
+                    continue;
+                }
+
+                if (parameters.get(i).getIn().equals(QUERY)) {
+                    if (queryValue == null ) {
+                        queryValue +=":";
+                    }else {
+                        queryValue +="&";
+                    }
+                    queryValue +=  parameters.get(i).getName() + ":" + value;
+                    continue;
+                }
+                if (parameters.get(i).getIn().equals(BODY) ) {
+                    if (!bodyValue.equals("")) {
+                        bodyValue+= "\\ \n";
+                    }
+                    bodyValue += "-d '" + value +"'";
+                    continue;
+                }
+            }
+
+        }
+        if (queryValue != null) {
+            curlValue += queryValue + " \\ \n";
+        }
+        if (!hederValue.equals("")) {
+            curlValue += " \\ \n";
+            curlValue += hederValue ;
+        }
+        if (!bodyValue.equals("")) {
+            curlValue += " \\ \n";
+            curlValue += bodyValue;
+        }
+        if (operation.getMethod() != HttpMethod.GET) {
+            curlValue += " \\ \n";
+            curlValue += " -X " + operation.getMethod();
+        }
+        generateLanguageBlock(curlValue, "shell", docBuilder);
+    }
+
+    private String getExampleFromDescription(String description) {
+        String[] info = description.split("\\*\\*Example:\\*\\* ");
+        if (info.length >1) {
+           return info[1];
+        } else {
+            return null;
+        }
+    }
+
+
+    /**
+     * Builds the example response section of a Swagger Operation.
+     *
+     * @param operation  the Swagger Operation
+     * @param docBuilder the docbuilder do use for output
+     */
+    private void buildExamplesResponseSection(PathOperation operation, MarkupDocBuilder docBuilder) {
+        Map<String, Object> generatedResponseExampleMap = ExamplesUtil.generateResponseExampleMap(config.isGeneratedExamplesEnabled(), operation.getOperation(), globalContext.getSwagger().getDefinitions(), markupDocBuilder);
+        exampleMap(generatedResponseExampleMap, EXAMPLE_RESPONSE_SLATE, RESPONSE, docBuilder);
+    }
+
     /**
      * Builds the example section of a Swagger Operation.
      *
@@ -566,19 +724,27 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         Map<String, Object> generatedRequestExampleMap = ExamplesUtil.generateRequestExampleMap(config.isGeneratedExamplesEnabled(), operation, globalContext.getSwagger().getDefinitions(), markupDocBuilder);
         Map<String, Object> generatedResponseExampleMap = ExamplesUtil.generateResponseExampleMap(config.isGeneratedExamplesEnabled(), operation.getOperation(), globalContext.getSwagger().getDefinitions(), markupDocBuilder);
 
-        exampleMap(generatedRequestExampleMap, EXAMPLE_REQUEST, REQUEST, docBuilder);
-        exampleMap(generatedResponseExampleMap, EXAMPLE_RESPONSE, RESPONSE, docBuilder);
+        exampleMap(generatedRequestExampleMap, EXAMPLE_REQUEST_SLATE, REQUEST, docBuilder);
+        exampleMap(generatedResponseExampleMap, EXAMPLE_RESPONSE_SLATE, RESPONSE, docBuilder);
     }
 
     private void exampleMap(Map<String, Object> exampleMap, String operationSectionTitle, String sectionTitle, MarkupDocBuilder docBuilder) {
         if (exampleMap.size() > 0) {
-            buildSectionTitle(operationSectionTitle, docBuilder);
+            docBuilder.textLine(operationSectionTitle);
             for (Map.Entry<String, Object> entry : exampleMap.entrySet()) {
-                buildExampleTitle(sectionTitle + " " + entry.getKey(), docBuilder);
-                docBuilder.listingBlock(Json.pretty(entry.getValue()), "json");
+//                buildExampleTitle(sectionTitle + " " + entry.getKey(), docBuilder);
+                generateLanguageBlock(Json.pretty(entry.getValue()), "json", docBuilder);
             }
         }
     }
+
+    private void generateLanguageBlock(String code, String codeLanguage, MarkupDocBuilder docBuilder) {
+        docBuilder.textLine("```" + codeLanguage);
+        docBuilder.textLine(code);
+        docBuilder.textLine("```");
+
+    }
+
 
     /**
      * Builds the security section of a Swagger Operation.
