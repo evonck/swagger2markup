@@ -437,7 +437,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      * Adds path operation title to the document.
      *
      * @param method      the path method
-     * @param path        path to the ressource
+     * @param path        path to the ressources
      * @param docBuilder the MarkupDocBuilder to use
      */
     private void buildPath(String method, String path, MarkupDocBuilder docBuilder) {
