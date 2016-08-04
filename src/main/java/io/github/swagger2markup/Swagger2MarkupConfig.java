@@ -213,4 +213,11 @@ public interface Swagger2MarkupConfig {
      * Specifies id the generated documantation is private.
      */
     boolean isPrivateDoc();
+
+    /**
+     * Specifies a host for the swagger info.
+     */
+    String getHost();
+
+
 }

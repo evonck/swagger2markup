@@ -49,7 +49,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
 
     /* Discriminator is only displayed for inheriting definitions */
     private static final boolean ALWAYS_DISPLAY_DISCRIMINATOR = false;
-    
+
     private static final String DEFINITIONS_ANCHOR = "definitions";
     private final String DEFINITIONS;
     private final String DISCRIMINATOR_COLUMN;
@@ -107,7 +107,8 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
             Model model = globalContext.getSwagger().getDefinitions().get(definitionName);
             if (isNotBlank(definitionName)) {
                 if (checkThatDefinitionIsNotInIgnoreList(definitionName)) {
-                    definitionName = "The " + definitionName.toLowerCase() + " object";
+
+                    definitionName = "The " + decapitalize(definitionName) + " object";
                     buildDefinition(definitionName, model);
                     if (logger.isInfoEnabled()) {
                         logger.info("Definition processed : '{}'", definitionName);
@@ -119,6 +120,15 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
                 }
             }
         }
+    }
+
+    public static String decapitalize(String string) {
+        if (string == null || string.length() == 0) {
+            return string;
+        }
+        char c[] = string.toCharArray();
+        c[0] = Character.toLowerCase(c[0]);
+        return new String(c);
     }
 
     private void buildDefinitionsTitle(String title) {
@@ -180,7 +190,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
      * @return true if the definition can be processed
      */
     private boolean checkThatDefinitionIsNotInIgnoreList(String definitionName) {
-        if (definitionName.contains("PaginatedResult") || definitionName.contains("Doc") ) {
+        if (definitionName.contains("PaginatedResult") || definitionName.contains("Doc")) {
             return false;
         }
         return !IGNORED_DEFINITIONS.contains(definitionName);
@@ -239,7 +249,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
         if (!(modelType instanceof ObjectType)) {
             modelType = createInlineType(modelType, definitionName, definitionName + " " + "inline", inlineDefinitions);
         }
-        
+
         if (modelType instanceof ObjectType) {
             ObjectType objectType = (ObjectType) modelType;
             MarkupDocBuilder typeInfos = copyMarkupDocBuilder();
@@ -257,9 +267,10 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
                             typeInfos.italicText(DISCRIMINATOR_COLUMN).textLine(COLON + objectType.getPolymorphism().getDiscriminator());
                     }
 
-                default: break;
+                default:
+                    break;
             }
-            
+
             String typeInfosString = typeInfos.toString();
             if (StringUtils.isNotBlank(typeInfosString))
                 docBuilder.paragraph(typeInfosString, true);
@@ -274,7 +285,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
 
         return inlineDefinitions;
     }
-    
+
     private void buildDescriptionParagraph(Model model, MarkupDocBuilder docBuilder) {
         modelDescription(model, docBuilder);
     }

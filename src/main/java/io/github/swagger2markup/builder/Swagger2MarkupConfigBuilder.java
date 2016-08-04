@@ -502,12 +502,22 @@ public class Swagger2MarkupConfigBuilder  {
     }
 
     /**
-     * Is the ocument generating private documentation.
+     * Is the document generating private documentation.
             *
             * @return this builder
     */
     public Swagger2MarkupConfigBuilder withPrivateDoc() {
         config.privateDoc = true;
+        return this;
+    }
+
+    /**
+     * Set default host for the swagger defintions.
+     *
+     * @return this builder
+     */
+    public Swagger2MarkupConfigBuilder withDefaultHost(String host) {
+        config.host = host;
         return this;
     }
 
@@ -547,6 +557,7 @@ public class Swagger2MarkupConfigBuilder  {
         private String separatedOperationsFolder;
         private String separatedDefinitionsFolder;
         private boolean privateDoc;
+        private String host;
 
         private Swagger2MarkupProperties extensionsProperties;
 
@@ -717,5 +728,8 @@ public class Swagger2MarkupConfigBuilder  {
 
         @Override
         public boolean isPrivateDoc() {return privateDoc;};
+
+        @Override
+        public String getHost() {return host;};
     }
 }

@@ -120,7 +120,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         UNKNOWN = labels.getString("unknown");
         DEFINITIONS = ">Definitions:\n";
         EXAMPLE_REQUEST_SLATE = ">Example request:\n";
-        EXAMPLE_RESPONSE_SLATE=">Example Response:\n";
+        EXAMPLE_RESPONSE_SLATE = ">Example Response:\n";
         HEADER = "header";
         TOKEN = "token";
         PATH = "path";
@@ -156,7 +156,11 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      */
     @Override
     public MarkupDocument build() {
-        basePath = globalContext.getSwagger().getSchemes().get(0).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost();
+        String host = globalContext.getSwagger().getHost();
+        if  (host == null) {
+            host = config.getHost();
+        }
+        basePath = globalContext.getSwagger().getSchemes().get(0).toString().toLowerCase() + "://" + host;
         Map<String, Path> paths = globalContext.getSwagger().getPaths();
         if (MapUtils.isNotEmpty(paths)) {
             applyPathsDocumentExtension(new Context(Position.DOCUMENT_BEFORE, this.markupDocBuilder));
@@ -188,9 +192,9 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
                     }
 
                     for (PathOperation operation : operationsGroupedByTag.get(tagName)) {
-                        if (!tagName.equals("private") ){
+                        if (!tagName.equals("private")) {
                             buildOperation(operation);
-                        } else if(config.isPrivateDoc()) {
+                        } else if (config.isPrivateDoc()) {
                             buildOperation(operation);
                         }
                     }
@@ -303,7 +307,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             buildDescriptionSection(operation, docBuilder);
             inlineDefinitions(buildParametersSection(operation, docBuilder), operation.getPath() + " " + operation.getMethod(), docBuilder);
             inlineDefinitions(buildBodyParameterSection(operation, docBuilder), operation.getPath() + " " + operation.getMethod(), docBuilder);
-            buildExamplesResponseSection(operation,docBuilder);
+            buildExamplesResponseSection(operation, docBuilder);
             inlineDefinitions(buildResponsesSection(operation, docBuilder), operation.getPath() + " " + operation.getMethod(), docBuilder);
 //            buildConsumesSection(operation, docBuilder);
 //            buildProducesSection(operation, docBuilder);
@@ -431,8 +435,8 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         }
         if (operation.getTitle().equals(operation.getOperation().getSummary())) {
             docBuilder.textLine(EXAMPLE_REQUEST_SLATE);
-            buildExamplesCurlSectionInfo(operation,docBuilder);
-            buildPath(operation.getMethod().toString(),operation.getPath(),docBuilder);
+            buildExamplesCurlSectionInfo(operation, docBuilder);
+            buildPath(operation.getMethod().toString(), operation.getPath(), docBuilder);
         }
         applyPathsDocumentExtension(new Context(Position.OPERATION_DESCRIPTION_AFTER, docBuilder, operation));
     }
@@ -440,8 +444,8 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
     /**
      * Adds path operation title to the document.
      *
-     * @param method      the path method
-     * @param path        path to the ressources
+     * @param method     the path method
+     * @param path       path to the ressources
      * @param docBuilder the MarkupDocBuilder to use
      */
     private void buildPath(String method, String path, MarkupDocBuilder docBuilder) {
@@ -450,8 +454,8 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 //            docBuilder.block(method + " " + schemes.get(0).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost() + path, MarkupBlockStyle.LITERAL );
 //        }
         buildSectionTitle(REQUEST_HEADER, docBuilder);
-        for (int i=0; i<  schemes.size(); i++) {
-            docBuilder.textLine("`" +method + " " + schemes.get(i).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost() + path + "`");
+        for (int i = 0; i < schemes.size(); i++) {
+            docBuilder.textLine("`" + method + " " + schemes.get(i).toString().toLowerCase() + "://" + globalContext.getSwagger().getHost() + path + "`");
             docBuilder.textLine(" ");
         }
     }
@@ -625,66 +629,64 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      * @param docBuilder the docbuilder do use for output
      */
     private void buildExamplesCurlSectionInfo(PathOperation operation, MarkupDocBuilder docBuilder) {
-        String curlValue = "curl \"" + basePath  + operation.getPath()  ;
+        String curlValue = "curl \"" + basePath + operation.getPath();
         String hederValue = "";
         String bodyValue = "";
         String queryValue = "";
         List<Parameter> parameters = operation.getOperation().getParameters();
-        for (int i=0; i< parameters.size(); i++ ) {
-            if ( parameters.get(i).getRequired() ) {
-                String value = null;
-                if (parameters.get(i).getDescription() != null) {
-                    value = getExampleFromDescription(parameters.get(i).getDescription());
+        for (Parameter parameter : parameters) {
+            String value = null;
+            if (parameter.getIn().equals(BODY)) {
+                BodyParameter bodyParameter = (BodyParameter) parameter;
+                if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel ) {
+                    RefModel ref = (RefModel) bodyParameter.getSchema();
+                    value = Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
                 }
-                if (parameters.get(i).getIn().equals(BODY)) {
-                    BodyParameter bodyParameter = (BodyParameter)parameters.get(i);
-                    if (bodyParameter.getSchema() != null ) {
-                        RefModel ref = (RefModel) bodyParameter.getSchema();
-                        value = Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(),globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
-                    }
+            }
+            if (parameter.getDescription() != null && value == null) {
+                value = getExampleFromDescription(parameter.getDescription());
+            }
+            if (value == null) {
+                continue;
+            }
+            if (parameter.getIn().equals(BODY)) {
+                if (!bodyValue.equals("")) {
+                    bodyValue += "\\ \n";
                 }
-                if (value == null) {
-                    continue;
-                }
-
-                if (parameters.get(i).getIn().equals(PATH)) {
-                    curlValue = curlValue.replace("{" + parameters.get(i).getName() + "}", value);
-                    continue;
-                }
-                if (parameters.get(i).getIn().equals(HEADER) ) {
+                bodyValue += "-d '" + value + "'";
+                continue;
+            }
+            if (parameter.getIn().equals(PATH)) {
+                curlValue = curlValue.replace("{" + parameter.getName() + "}", value.trim());
+                continue;
+            }
+            if (parameter.getRequired()) {
+                if (parameter.getIn().equals(HEADER)) {
                     if (!hederValue.equals("")) {
-                        hederValue+= "\\ \n";
+                        hederValue += "\\ \n";
                     }
-                    hederValue += "-H \"" + parameters.get(i).getName()+":" + value +" \"" ;
+                    hederValue += "-H \"" + parameter.getName() + ":" + value + " \"";
                     continue;
                 }
-
-                if (parameters.get(i).getIn().equals(QUERY)) {
-                    if (queryValue == null ) {
-                        queryValue +=":";
-                    }else {
-                        queryValue +="&";
+                if (parameter.getIn().equals(QUERY)) {
+                    if (queryValue == null) {
+                        queryValue += ":";
+                    } else {
+                        queryValue += "&";
                     }
-                    queryValue +=  parameters.get(i).getName() + ":" + value;
-                    continue;
-                }
-                if (parameters.get(i).getIn().equals(BODY) ) {
-                    if (!bodyValue.equals("")) {
-                        bodyValue+= "\\ \n";
-                    }
-                    bodyValue += "-d '" + value +"'";
+                    queryValue += parameter.getName() + ":" + value.trim();
                     continue;
                 }
             }
 
         }
         if (queryValue != null) {
-            curlValue += queryValue ;
+            curlValue += queryValue;
         }
         curlValue += "\"";
         if (!hederValue.equals("")) {
             curlValue += " \\ \n";
-            curlValue += hederValue ;
+            curlValue += hederValue;
         }
         if (!bodyValue.equals("")) {
             curlValue += " \\ \n";
@@ -699,8 +701,8 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 
     private String getExampleFromDescription(String description) {
         String[] info = description.split("\\*\\*Example:\\*\\* ");
-        if (info.length >1) {
-           return info[1];
+        if (info.length > 1) {
+            return info[1];
         } else {
             return null;
         }
