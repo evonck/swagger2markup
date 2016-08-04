@@ -455,7 +455,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             host = config.getHost();
         }
         buildSectionTitle(REQUEST_HEADER, docBuilder);
-        for ( Scheme scheme : schemes ) {
+        for (Scheme scheme : schemes) {
             docBuilder.textLine("`" + method + " " + scheme.toString().toLowerCase() + "://" + host + path + "`");
             docBuilder.textLine(" ");
         }
@@ -631,33 +631,17 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      */
     private void buildExamplesCurlSectionInfo(PathOperation operation, MarkupDocBuilder docBuilder) {
         String curlValue = "curl \"" + basePath + operation.getPath();
-        String hederValue = "";
+        String headerValue = "";
         String bodyValue = "";
         String queryValue = "";
         List<Parameter> parameters = operation.getOperation().getParameters();
         for (Parameter parameter : parameters) {
-            String value = null;
-            if (parameter.getIn().equals(BODY)) {
-                BodyParameter bodyParameter = (BodyParameter) parameter;
-                if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel) {
-                    RefModel ref = (RefModel) bodyParameter.getSchema();
-                    value = Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
-                }
-            }
-            if (parameter.getDescription() != null) {
-                String newValue = getExampleFromDescription(parameter.getDescription());
-                if (newValue != null) {
-                    value = newValue;
-                }
-            }
+            String value = generateValueProperties(parameter, docBuilder);
             if (value == null) {
                 continue;
             }
             if (parameter.getIn().equals(BODY)) {
-                if (!bodyValue.equals("")) {
-                    bodyValue += "\\ \n";
-                }
-                bodyValue += "-d '" + value + "'";
+                bodyValue = generateCurlParam(bodyValue, value);
                 continue;
             }
             if (parameter.getIn().equals(PATH)) {
@@ -666,41 +650,37 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             }
             if (parameter.getRequired()) {
                 if (parameter.getIn().equals(HEADER)) {
-                    if (!hederValue.equals("")) {
-                        hederValue += "\\ \n";
-                    }
-                    hederValue += "-H \"" + parameter.getName() + ":" + value + " \"";
+                    headerValue = generateCurlParam(headerValue, value);
                     continue;
                 }
                 if (parameter.getIn().equals(QUERY)) {
-                    if (queryValue == null) {
-                        queryValue += ":";
-                    } else {
-                        queryValue += "&";
-                    }
-                    queryValue += parameter.getName() + ":" + value.trim();
+                    queryValue = generateQueryParam(queryValue, parameter.getName(), value);
                     continue;
                 }
             }
-
         }
+        curlValue = generateCurl(operation, curlValue, queryValue, headerValue, bodyValue);
+        generateLanguageBlock(curlValue, "shell", docBuilder);
+    }
+
+    private String generateCurl(PathOperation operation,String curlValue, String queryValue, String headerValue, String bodyValue) {
         if (queryValue != null) {
             curlValue += queryValue;
         }
         curlValue += "\"";
-        if (!hederValue.equals("")) {
+        if (!headerValue.equals("")) {
             curlValue += " \\ \n";
-            curlValue += hederValue;
+            curlValue += "-H " + headerValue;
         }
         if (!bodyValue.equals("")) {
             curlValue += " \\ \n";
-            curlValue += bodyValue;
+            curlValue += "-d " + bodyValue;
         }
         if (operation.getMethod() != HttpMethod.GET) {
             curlValue += " \\ \n";
             curlValue += " -X " + operation.getMethod();
         }
-        generateLanguageBlock(curlValue, "shell", docBuilder);
+        return curlValue;
     }
 
     private String getExampleFromDescription(String description) {
@@ -710,6 +690,42 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         } else {
             return null;
         }
+    }
+
+    private String generateCurlParam(String description, String value) {
+        if (!description.equals("")) {
+            description += "\\ \n";
+        }
+        description += value + "'";
+        return description;
+    }
+
+    private String generateQueryParam(String query, String queryName, String value) {
+        if (query == null) {
+            query += ":";
+        } else {
+            query += "&";
+        }
+        query += queryName + ":" + value.trim();
+        return query;
+    }
+
+    private String generateValueProperties(Parameter parameter, MarkupDocBuilder docBuilder) {
+        if (parameter.getDescription() != null) {
+            String value = getExampleFromDescription(parameter.getDescription());
+            if (value != null) {
+                return value;
+
+            }
+        }
+        if (parameter.getIn().equals(BODY)) {
+            BodyParameter bodyParameter = (BodyParameter) parameter;
+            if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel) {
+                RefModel ref = (RefModel) bodyParameter.getSchema();
+                return Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
+            }
+        }
+        return null;
     }
 
 
