@@ -77,6 +77,9 @@ public class ExamplesUtil {
                                 example = exampleString + exampleObject.toString() + "]";
                             }
                         }
+                        if (schema instanceof MapProperty) {
+                            example = generateExampleForMapProperty((MapProperty) schema, markupDocBuilder,definitions);
+                        }
 
                         if (example == null && generateMissingExamples) {
                             example = PropertyUtils.generateExample(schema, markupDocBuilder);

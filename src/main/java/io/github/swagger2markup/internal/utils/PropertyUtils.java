@@ -346,12 +346,15 @@ public final class PropertyUtils {
             case "boolean":
                 return true;
             case "string":
-                switch (property.getFormat()){
-                    case "uuid":
-                        return "123e4567-e89b-12d3-a456-426655440000";
-                    default:
-                        return "string";
+                if (property.getFormat() != null) {
+                    switch (property.getFormat()){
+                        case "uuid":
+                            return "123e4567-e89b-12d3-a456-426655440000";
+                        default:
+                            return "string";
+                    }
                 }
+               return "string";
             case "ref":
                 if (property instanceof RefProperty) {
                     if ( ((RefProperty) property).getSimpleRef().contains("Doc") ) {

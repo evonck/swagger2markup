@@ -163,6 +163,12 @@ public abstract class MarkupDocumentBuilder {
             MapType mapType = (MapType)type;
             if (mapType.getValueType() instanceof ObjectType)
                 mapType.setValueType(createInlineType(mapType.getValueType(), name, uniqueName, inlineDefinitions));
+            if (mapType.getValueType() instanceof RefType) {
+                RefType refType = (RefType) mapType.getValueType();
+                if (refType.getRefType().getName() != null && refType.getRefType().getName().contains("Doc")) {
+                    mapType.setValueType(createInlineType(mapType.getValueType(), name, uniqueName, inlineDefinitions));
+                }
+            }
             return mapType;
         } else if (type instanceof RefType) {
             RefType refType = (RefType) type;

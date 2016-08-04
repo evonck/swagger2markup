@@ -157,7 +157,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
     @Override
     public MarkupDocument build() {
         String host = globalContext.getSwagger().getHost();
-        if  (host == null) {
+        if (host == null) {
             host = config.getHost();
         }
         basePath = globalContext.getSwagger().getSchemes().get(0).toString().toLowerCase() + "://" + host;
@@ -450,12 +450,13 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      */
     private void buildPath(String method, String path, MarkupDocBuilder docBuilder) {
         List<Scheme> schemes = globalContext.getSwagger().getSchemes();
-//        if (schemes != null ){
-//            docBuilder.block(method + " " + schemes.get(0).toString().toLowerCase() + "://"+ globalContext.getSwagger().getHost() + path, MarkupBlockStyle.LITERAL );
-//        }
+        String host = globalContext.getSwagger().getHost();
+        if (host == null) {
+            host = config.getHost();
+        }
         buildSectionTitle(REQUEST_HEADER, docBuilder);
-        for (int i = 0; i < schemes.size(); i++) {
-            docBuilder.textLine("`" + method + " " + schemes.get(i).toString().toLowerCase() + "://" + globalContext.getSwagger().getHost() + path + "`");
+        for ( Scheme scheme : schemes ) {
+            docBuilder.textLine("`" + method + " " + scheme.toString().toLowerCase() + "://" + host + path + "`");
             docBuilder.textLine(" ");
         }
     }
@@ -638,13 +639,16 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             String value = null;
             if (parameter.getIn().equals(BODY)) {
                 BodyParameter bodyParameter = (BodyParameter) parameter;
-                if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel ) {
+                if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel) {
                     RefModel ref = (RefModel) bodyParameter.getSchema();
                     value = Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
                 }
             }
-            if (parameter.getDescription() != null && value == null) {
-                value = getExampleFromDescription(parameter.getDescription());
+            if (parameter.getDescription() != null) {
+                String newValue = getExampleFromDescription(parameter.getDescription());
+                if (newValue != null) {
+                    value = newValue;
+                }
             }
             if (value == null) {
                 continue;
