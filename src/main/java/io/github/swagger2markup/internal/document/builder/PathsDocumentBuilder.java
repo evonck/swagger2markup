@@ -188,7 +188,11 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
                     }
 
                     for (PathOperation operation : operationsGroupedByTag.get(tagName)) {
-                        buildOperation(operation);
+                        if (!tagName.equals("private") ){
+                            buildOperation(operation);
+                        } else if(config.isPrivateDoc()) {
+                            buildOperation(operation);
+                        }
                     }
                 }
             }

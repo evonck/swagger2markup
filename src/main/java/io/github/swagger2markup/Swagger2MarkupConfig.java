@@ -208,4 +208,9 @@ public interface Swagger2MarkupConfig {
      * @return the extension properties
      */
     Swagger2MarkupProperties getExtensionsProperties();
+
+    /**
+     * Specifies id the generated documantation is private.
+     */
+    boolean isPrivateDoc();
 }

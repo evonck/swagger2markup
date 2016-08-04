@@ -501,6 +501,16 @@ public class Swagger2MarkupConfigBuilder  {
         return this;
     }
 
+    /**
+     * Is the ocument generating private documentation.
+            *
+            * @return this builder
+    */
+    public Swagger2MarkupConfigBuilder withPrivateDoc() {
+        config.privateDoc = true;
+        return this;
+    }
+
     static class DefaultSwagger2MarkupConfig implements Swagger2MarkupConfig{
 
         private MarkupLanguage markupLanguage;
@@ -536,6 +546,7 @@ public class Swagger2MarkupConfigBuilder  {
         private String securityDocument;
         private String separatedOperationsFolder;
         private String separatedDefinitionsFolder;
+        private boolean privateDoc;
 
         private Swagger2MarkupProperties extensionsProperties;
 
@@ -703,5 +714,8 @@ public class Swagger2MarkupConfigBuilder  {
         public Swagger2MarkupProperties getExtensionsProperties() {
             return extensionsProperties;
         }
+
+        @Override
+        public boolean isPrivateDoc() {return privateDoc;};
     }
 }
