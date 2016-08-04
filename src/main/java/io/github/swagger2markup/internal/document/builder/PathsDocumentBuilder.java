@@ -621,10 +621,10 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      * @param docBuilder the docbuilder do use for output
      */
     private void buildExamplesCurlSectionInfo(PathOperation operation, MarkupDocBuilder docBuilder) {
-        String curlValue = "curl \"" + basePath  + operation.getPath() +"\"" ;
+        String curlValue = "curl \"" + basePath  + operation.getPath()  ;
         String hederValue = "";
         String bodyValue = "";
-        String queryValue = null;
+        String queryValue = "";
         List<Parameter> parameters = operation.getOperation().getParameters();
         for (int i=0; i< parameters.size(); i++ ) {
             if ( parameters.get(i).getRequired() ) {
@@ -675,8 +675,9 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
 
         }
         if (queryValue != null) {
-            curlValue += queryValue + " \\ \n";
+            curlValue += queryValue ;
         }
+        curlValue += "\"";
         if (!hederValue.equals("")) {
             curlValue += " \\ \n";
             curlValue += hederValue ;

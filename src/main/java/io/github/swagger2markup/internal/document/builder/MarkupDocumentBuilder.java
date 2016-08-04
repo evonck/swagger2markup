@@ -147,21 +147,30 @@ public abstract class MarkupDocumentBuilder {
             return type;
         
         if (type instanceof ObjectType) {
+            if (type.getName() != null && type.getName().contains("Doc")) {
+                if (((ObjectType) type).getProperties() != null ) {
+                    type.setName(((ObjectType) type).getProperties().entrySet().iterator().next().getValue().getType());
+                } else {
+                    type = new BasicType(globalContext.getSwagger().getDefinitions().get(type.getName()).getProperties().entrySet().iterator().next().getValue().getType(), null); // FIXME : Workaround for https://github.com/swagger-api/swagger-parser/issues/177
+                }
+            }
             return createInlineObjectType(type, name, uniqueName, inlineDefinitions);
         } else if (type instanceof ArrayType) {
             ArrayType arrayType = (ArrayType)type;
             arrayType.setOfType(createInlineType(arrayType.getOfType(), name, uniqueName, inlineDefinitions));
-
             return arrayType;
         } else if (type instanceof MapType) {
             MapType mapType = (MapType)type;
             if (mapType.getValueType() instanceof ObjectType)
                 mapType.setValueType(createInlineType(mapType.getValueType(), name, uniqueName, inlineDefinitions));
-
             return mapType;
-        } else {
-            return type;
+        } else if (type instanceof RefType) {
+            RefType refType = (RefType) type;
+            if (refType.getRefType().getName().contains("Doc") ) {
+               return createInlineType(refType.getRefType(), name, uniqueName, inlineDefinitions);
+            }
         }
+        return type;
     }
 
     protected Type createInlineObjectType(Type type, String name, String uniqueName, List<ObjectType> inlineDefinitions) {

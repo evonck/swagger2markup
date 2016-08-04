@@ -49,7 +49,7 @@ public class ExamplesUtil {
         Map<String, Response> responses = operation.getResponses();
         if (responses != null)
             for (Map.Entry<String, Response> responseEntry : responses.entrySet()) {
-                if ( Integer.parseInt(responseEntry.getKey()) >= 300) {
+                if ( responseEntry.getKey().equals("default") ||Integer.parseInt(responseEntry.getKey()) >= 300) {
                     continue;
                 }
                 Response response = responseEntry.getValue();
@@ -63,6 +63,21 @@ public class ExamplesUtil {
                             String simpleRef = ((RefProperty) schema).getSimpleRef();
                             example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder);
                         }
+
+                        if (example == null && schema instanceof ArrayProperty) {
+                            Property property = ((ArrayProperty) schema).getItems();
+                            example = property.getExample();
+                            if (example == null && property instanceof RefProperty ) {
+                                RefProperty refProperty = (RefProperty) property;
+                                example = generateExampleForArrayRefModel(generateMissingExamples, refProperty.getSimpleRef(), definitions, markupDocBuilder);
+                            }
+                            if ( example == null && generateMissingExamples ) {
+                                String exampleString = "[";
+                                Object exampleObject = PropertyUtils.generateExample(schema, markupDocBuilder);
+                                example = exampleString + exampleObject.toString() + "]";
+                            }
+                        }
+
                         if (example == null && generateMissingExamples) {
                             example = PropertyUtils.generateExample(schema, markupDocBuilder);
                         }
@@ -197,7 +212,9 @@ public class ExamplesUtil {
     }
 
 
-
+    public static Object generateExampleForArrayRefModel(boolean generateMissingExamples, String simpleRef, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
+        return new Object[]{generateExampleForRefModel(generateMissingExamples,simpleRef,definitions,markupDocBuilder)};
+    }
 
 
     private static Map<String, Property> getPropertiesForComposedModel(ComposedModel model, Map<String, Model> definitions) {

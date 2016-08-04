@@ -56,7 +56,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
     private final String POLYMORPHISM_COLUMN;
     private final Map<ObjectTypePolymorphism.Nature, String> POLYMORPHISM_NATURE;
     private final String TYPE_COLUMN;
-    private static final List<String> IGNORED_DEFINITIONS = Collections.singletonList("PaginatedResultTeam");
+    private static final List<String> IGNORED_DEFINITIONS = Collections.singletonList("MsErrorMessage");
 
     public DefinitionsDocumentBuilder(Swagger2MarkupConverter.Context context, Swagger2MarkupExtensionRegistry extensionRegistry, Path outputPath) {
         super(context, extensionRegistry, outputPath);
