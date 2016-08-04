@@ -352,7 +352,10 @@ public class ExamplesUtil {
             return new Object[]{generateExampleForArrayProperty((ArrayProperty) property, definitions, markupDocBuilder)};
         } else if (property instanceof RefProperty) {
             return new Object[]{generateExampleForRefModel(true, ((RefProperty) property).getSimpleRef(), definitions, markupDocBuilder)};
-        } else {
+        } else if (property instanceof MapProperty){
+            return new Object[]{generateExampleForMapProperty((MapProperty) property, markupDocBuilder,definitions)};
+        }
+        else {
             return new Object[]{PropertyUtils.generateExample(property, markupDocBuilder)};
         }
     }

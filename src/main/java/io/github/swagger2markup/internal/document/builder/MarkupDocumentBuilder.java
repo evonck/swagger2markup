@@ -53,16 +53,16 @@ public abstract class MarkupDocumentBuilder {
     protected static final String COLON = " : ";
 
     protected final String DEFAULT_COLUMN;
-    
+
     protected final String MAXLENGTH_COLUMN;
     protected final String MINLENGTH_COLUMN;
     protected final String LENGTH_COLUMN;
-    
+
     protected final String PATTERN_COLUMN;
     protected final String MINVALUE_COLUMN;
     protected final String MAXVALUE_COLUMN;
-    
-    
+
+
     protected final String EXAMPLE_COLUMN;
     protected final String SCHEMA_COLUMN;
     protected final String NAME_COLUMN;
@@ -77,7 +77,7 @@ public abstract class MarkupDocumentBuilder {
     protected final String FLAGS_REQUIRED;
     protected final String FLAGS_OPTIONAL;
     protected final String FLAGS_READ_ONLY;
-    
+
 
     protected Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -97,15 +97,15 @@ public abstract class MarkupDocumentBuilder {
 
         ResourceBundle labels = ResourceBundle.getBundle("io/github/swagger2markup/lang/labels", config.getOutputLanguage().toLocale());
         DEFAULT_COLUMN = labels.getString("default_column");
-        
+
         MINLENGTH_COLUMN = labels.getString("minlength_column");
         MAXLENGTH_COLUMN = labels.getString("maxlength_column");
         LENGTH_COLUMN = labels.getString("length_column");
-        
+
         PATTERN_COLUMN = labels.getString("pattern_column");
         MINVALUE_COLUMN = labels.getString("minvalue_column");
         MAXVALUE_COLUMN = labels.getString("maxvalue_column");
-        
+
         EXAMPLE_COLUMN = labels.getString("example_column");
         FLAGS_COLUMN = labels.getString("flags.column");
         FLAGS_REQUIRED = labels.getString("flags.required");
@@ -134,21 +134,21 @@ public abstract class MarkupDocumentBuilder {
      * Returns a RefType to a new inlined type named with {@code name} and {@code uniqueName}.<br>
      * The returned RefType point to the new inlined type which is added to the {@code inlineDefinitions} collection.<br>
      * The function is recursive and support collections (ArrayType and MapType).<br>
-     * The function is transparent : {@code type} is returned as-is if type is not inlinable or if !config.isInlineSchemaEnabled().<br> 
-     * 
-     * @param type type to inline
-     * @param name name of the created inline ObjectType
-     * @param uniqueName unique name of the created inline ObjectType
+     * The function is transparent : {@code type} is returned as-is if type is not inlinable or if !config.isInlineSchemaEnabled().<br>
+     *
+     * @param type              type to inline
+     * @param name              name of the created inline ObjectType
+     * @param uniqueName        unique name of the created inline ObjectType
      * @param inlineDefinitions a non null collection of inline ObjectType
      * @return the type referencing the newly created inline ObjectType. Can be a RefType, an ArrayType or a MapType
      */
     protected Type createInlineType(Type type, String name, String uniqueName, List<ObjectType> inlineDefinitions) {
         if (!config.isInlineSchemaEnabled())
             return type;
-        
+
         if (type instanceof ObjectType) {
             if (type.getName() != null && type.getName().contains("Doc")) {
-                if (((ObjectType) type).getProperties() != null ) {
+                if (((ObjectType) type).getProperties() != null) {
                     type.setName(((ObjectType) type).getProperties().entrySet().iterator().next().getValue().getType());
                 } else {
                     type = new BasicType(globalContext.getSwagger().getDefinitions().get(type.getName()).getProperties().entrySet().iterator().next().getValue().getType(), null); // FIXME : Workaround for https://github.com/swagger-api/swagger-parser/issues/177
@@ -156,11 +156,11 @@ public abstract class MarkupDocumentBuilder {
             }
             return createInlineObjectType(type, name, uniqueName, inlineDefinitions);
         } else if (type instanceof ArrayType) {
-            ArrayType arrayType = (ArrayType)type;
+            ArrayType arrayType = (ArrayType) type;
             arrayType.setOfType(createInlineType(arrayType.getOfType(), name, uniqueName, inlineDefinitions));
             return arrayType;
         } else if (type instanceof MapType) {
-            MapType mapType = (MapType)type;
+            MapType mapType = (MapType) type;
             if (mapType.getValueType() instanceof ObjectType)
                 mapType.setValueType(createInlineType(mapType.getValueType(), name, uniqueName, inlineDefinitions));
             if (mapType.getValueType() instanceof RefType) {
@@ -172,8 +172,8 @@ public abstract class MarkupDocumentBuilder {
             return mapType;
         } else if (type instanceof RefType) {
             RefType refType = (RefType) type;
-            if (refType.getRefType().getName().contains("Doc") ) {
-               return createInlineType(refType.getRefType(), name, uniqueName, inlineDefinitions);
+            if (refType.getRefType().getName().contains("Doc")) {
+                return createInlineType(refType.getRefType(), name, uniqueName, inlineDefinitions);
             }
         }
         return type;
@@ -181,7 +181,7 @@ public abstract class MarkupDocumentBuilder {
 
     protected Type createInlineObjectType(Type type, String name, String uniqueName, List<ObjectType> inlineDefinitions) {
         if (type instanceof ObjectType) {
-            ObjectType objectType = (ObjectType)type;
+            ObjectType objectType = (ObjectType) type;
             if (MapUtils.isNotEmpty(objectType.getProperties())) {
                 if (objectType.getName() == null) {
                     objectType.setName(name);
@@ -193,6 +193,43 @@ public abstract class MarkupDocumentBuilder {
                 return type;
         } else
             return type;
+    }
+
+
+    protected Type getDocType(Type propertyType, DefinitionDocumentResolver definitionDocumentResolver) {
+        // Check if property is of type Doc for Array
+        if (propertyType instanceof ArrayType) {
+            if (((ArrayType) propertyType).getOfType() instanceof RefType) {
+                RefType refType = (RefType) ((ArrayType) propertyType).getOfType();
+                if (refType.getRefType().getName() != null && refType.getRefType().getName().contains("Doc")) {
+                    Map<String, Model> definitions = globalContext.getSwagger().getDefinitions();
+                    Map<String, Property> propertiesTest = definitions.get(refType.getRefType().getName()).getProperties();
+                    Property propertyDoc = propertiesTest.entrySet().iterator().next().getValue();
+                    ((ArrayType) propertyType).setOfType(PropertyUtils.getType(propertyDoc, definitionDocumentResolver));
+                }
+            }
+            if (((ArrayType) propertyType).getOfType() instanceof MapType) {
+                ((ArrayType) propertyType).setOfType(SetDocMap(((ArrayType) propertyType).getOfType(), definitionDocumentResolver));
+            }
+        }
+        // Check if property is of type Doc for Map
+        propertyType =  SetDocMap(propertyType,definitionDocumentResolver);
+
+        return propertyType;
+    }
+
+    protected Type SetDocMap(Type propertyType, DefinitionDocumentResolver definitionDocumentResolver) {
+        if (propertyType instanceof MapType && ((MapType) propertyType).getValueType() instanceof RefType) {
+            RefType refType = (RefType) ((MapType) propertyType).getValueType();
+            if (refType.getRefType().getName() != null && refType.getRefType().getName().contains("Doc")) {
+                Map<String, Model> definitions = globalContext.getSwagger().getDefinitions();
+                Map<String, Property> propertiesTest = definitions.get(refType.getRefType().getName()).getProperties();
+                Property propertyDoc = propertiesTest.entrySet().iterator().next().getValue();
+                ((MapType) propertyType).setValueType(PropertyUtils.getType(propertyDoc, definitionDocumentResolver));
+                return propertyType;
+            }
+        }
+        return propertyType;
     }
 
     /**
@@ -216,34 +253,14 @@ public abstract class MarkupDocumentBuilder {
             for (String propertyName : propertyNames) {
                 Property property = properties.get(propertyName);
                 Type propertyType = PropertyUtils.getType(property, definitionDocumentResolver);
-
-                // Check if property is of type Doc for Array
-                if (propertyType instanceof  ArrayType && ((ArrayType) propertyType).getOfType() instanceof  RefType) {
-                    RefType refType = (RefType) ((ArrayType) propertyType).getOfType();
-                    if (refType.getRefType().getName()!= null && refType.getRefType().getName().contains("Doc")) {
-                        Map<String, Model> definitions = globalContext.getSwagger().getDefinitions();
-                        Map<String, Property> propertiesTest = definitions.get(refType.getRefType().getName()).getProperties();
-                        Property propertyDoc = propertiesTest.entrySet().iterator().next().getValue();
-                        ((ArrayType) propertyType).setOfType(PropertyUtils.getType(propertyDoc, definitionDocumentResolver));
-                    }
-                }
-                // Check if property is of type Doc for Map
-                if (propertyType instanceof MapType && ((MapType) propertyType).getValueType() instanceof  RefType) {
-                    RefType refType = (RefType) ((MapType) propertyType).getValueType();
-                    if (refType.getRefType().getName()!= null && refType.getRefType().getName().contains("Doc")) {
-                        Map<String, Model> definitions = globalContext.getSwagger().getDefinitions();
-                        Map<String, Property> propertiesTest = definitions.get(refType.getRefType().getName()).getProperties();
-                        Property propertyDoc = propertiesTest.entrySet().iterator().next().getValue();
-                        ((MapType) propertyType).setValueType(PropertyUtils.getType(propertyDoc, definitionDocumentResolver));
-                    }
-                }
+                propertyType = getDocType(propertyType,definitionDocumentResolver);
 
                 propertyType = createInlineType(propertyType, propertyName, uniquePrefix + " " + propertyName, inlineDefinitions);
-                
-                Object example = PropertyUtils.getExample(config.isGeneratedExamplesEnabled(), property, markupDocBuilder,globalContext.getSwagger().getDefinitions() );
+
+                Object example = PropertyUtils.getExample(config.isGeneratedExamplesEnabled(), property, markupDocBuilder, globalContext.getSwagger().getDefinitions());
 
                 Object defaultValue = PropertyUtils.getDefaultValue(property);
-                
+
                 Integer maxlength = PropertyUtils.getMaxlength(property);
                 Integer minlength = PropertyUtils.getMinlength(property);
                 String pattern = PropertyUtils.getPattern(property);
@@ -260,66 +277,65 @@ public abstract class MarkupDocumentBuilder {
                     propertyNameContent.newLine(true);
                     propertyNameContent.italicText(FLAGS_READ_ONLY.toLowerCase());
                 }
-                
+
                 MarkupDocBuilder descriptionContent = copyMarkupDocBuilder();
                 String description = defaultString(swaggerMarkupDescription(property.getDescription()));
-                if (isNotBlank(description.toString())) 
+                if (isNotBlank(description.toString()))
                     descriptionContent.text(description);
-                
-                if(defaultValue != null){
+
+                if (defaultValue != null) {
                     if (isNotBlank(descriptionContent.toString()))
                         descriptionContent.newLine(true);
                     descriptionContent.boldText(DEFAULT_COLUMN).text(COLON).literalText(Json.pretty(defaultValue));
                 }
-                
+
                 if (minlength != null && maxlength != null) {
                     // combination of minlength/maxlength
-                	
-                	if (isNotBlank(descriptionContent.toString()))
+
+                    if (isNotBlank(descriptionContent.toString()))
                         descriptionContent.newLine(true);
-                	
-                	String lengthRange = minlength + " - " + maxlength;
-                	if (minlength.equals(maxlength)) {
-                		lengthRange = minlength.toString();
-                	}
-                	
+
+                    String lengthRange = minlength + " - " + maxlength;
+                    if (minlength.equals(maxlength)) {
+                        lengthRange = minlength.toString();
+                    }
+
                     descriptionContent.boldText(LENGTH_COLUMN).text(COLON).literalText(lengthRange);
-                    
+
                 } else {
-                	 if(minlength != null){
-                     	if (isNotBlank(descriptionContent.toString()))
-                             descriptionContent.newLine(true);
-                         descriptionContent.boldText(MINLENGTH_COLUMN).text(COLON).literalText(minlength.toString());
-                     }
-                     
-                     if(maxlength != null){
-                     	if (isNotBlank(descriptionContent.toString()))
-                             descriptionContent.newLine(true);
-                         descriptionContent.boldText(MAXLENGTH_COLUMN).text(COLON).literalText(maxlength.toString());
-                     }
+                    if (minlength != null) {
+                        if (isNotBlank(descriptionContent.toString()))
+                            descriptionContent.newLine(true);
+                        descriptionContent.boldText(MINLENGTH_COLUMN).text(COLON).literalText(minlength.toString());
+                    }
+
+                    if (maxlength != null) {
+                        if (isNotBlank(descriptionContent.toString()))
+                            descriptionContent.newLine(true);
+                        descriptionContent.boldText(MAXLENGTH_COLUMN).text(COLON).literalText(maxlength.toString());
+                    }
                 }
-                
-               
-                
-                if(pattern != null){
-                	if (isNotBlank(descriptionContent.toString()))
+
+
+                if (pattern != null) {
+                    if (isNotBlank(descriptionContent.toString()))
                         descriptionContent.newLine(true);
-                	
+
                     descriptionContent.boldText(PATTERN_COLUMN).text(COLON).literalText(Json.pretty(pattern));
                 }
-                
-                if(minValue != null){
-                	if (isNotBlank(descriptionContent.toString()))
+
+                if (minValue != null) {
+                    if (isNotBlank(descriptionContent.toString()))
                         descriptionContent.newLine(true);
                     descriptionContent.boldText(MINVALUE_COLUMN).text(COLON).literalText(minValue.toString());
                 }
-                
-                if(maxValue != null){
-                	if (isNotBlank(descriptionContent.toString()))
+
+                if (maxValue != null) {
+                    if (isNotBlank(descriptionContent.toString()))
                         descriptionContent.newLine(true);
                     descriptionContent.boldText(MAXVALUE_COLUMN).text(COLON).literalText(maxValue.toString());
                 }
-                
+
                 if (example != null) {
                     if (isNotBlank(description) || defaultValue != null)
                         descriptionContent.newLine(true);
@@ -356,7 +372,7 @@ public abstract class MarkupDocumentBuilder {
     protected String literalText(String text) {
         return copyMarkupDocBuilder().literalText(text).toString();
     }
-    
+
     /**
      * Returns converted markup text from Swagger.
      *

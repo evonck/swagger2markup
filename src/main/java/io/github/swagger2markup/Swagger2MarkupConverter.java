@@ -174,7 +174,7 @@ public class Swagger2MarkupConverter {
         new OverviewDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getOverviewDocument()), StandardCharsets.UTF_8);
         new PathsDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getPathsDocument()), StandardCharsets.UTF_8);
         new DefinitionsDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getDefinitionsDocument()), StandardCharsets.UTF_8);
-        new SecurityDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getSecurityDocument()), StandardCharsets.UTF_8);
+//        new SecurityDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getSecurityDocument()), StandardCharsets.UTF_8);
     }
 
     /**
