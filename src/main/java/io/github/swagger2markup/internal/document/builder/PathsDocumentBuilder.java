@@ -704,7 +704,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         if (!description.equals("")) {
             description += "\\ \n";
         }
-        description += "-H \"" + name + ":" + value.trim() + "\"";
+        description += "-H \"" + name + ": " + value.trim() + "\"";
         return description;
     }
 
