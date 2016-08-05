@@ -302,7 +302,7 @@ public final class PropertyUtils {
                 if ( itemProperty instanceof  MapProperty) {
                     exampleArray.add(getExample(generateMissingExamples, itemProperty, markupDocBuilder, definitions));
                 } else {
-                    exampleArray.add(generateExample(itemProperty, markupDocBuilder));
+                    exampleArray.add(generateExample(itemProperty, markupDocBuilder, definitions));
                 }
                 examplesValue = exampleArray;
             }

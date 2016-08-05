@@ -650,7 +650,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             }
             if (parameter.getRequired()) {
                 if (parameter.getIn().equals(HEADER)) {
-                    headerValue = generateCurlParam(headerValue, value);
+                    headerValue = generateCurlHeaderParam(headerValue, parameter.getName(), value);
                     continue;
                 }
                 if (parameter.getIn().equals(QUERY)) {
@@ -670,11 +670,11 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         curlValue += "\"";
         if (!headerValue.equals("")) {
             curlValue += " \\ \n";
-            curlValue += "-H " + headerValue;
+            curlValue += headerValue;
         }
         if (!bodyValue.equals("")) {
             curlValue += " \\ \n";
-            curlValue += "-d " + bodyValue;
+            curlValue += "-d '" + bodyValue;
         }
         if (operation.getMethod() != HttpMethod.GET) {
             curlValue += " \\ \n";
@@ -697,6 +697,14 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             description += "\\ \n";
         }
         description += value + "'";
+        return description;
+    }
+
+    private String generateCurlHeaderParam(String description, String name, String value) {
+        if (!description.equals("")) {
+            description += "\\ \n";
+        }
+        description += "-H \"" + name + ":" + value.trim() + "\"";
         return description;
     }
 
