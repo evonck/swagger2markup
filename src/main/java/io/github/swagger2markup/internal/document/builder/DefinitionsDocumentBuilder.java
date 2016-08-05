@@ -106,7 +106,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
         for (String definitionName : definitionNames) {
             Model model = globalContext.getSwagger().getDefinitions().get(definitionName);
             if (isNotBlank(definitionName)) {
-                if (checkThatDefinitionIsNotInIgnoreList(definitionName)) {
+                if (checkThatDefinitionIsNotInIgnoreList(definitionName, model)) {
                     String anchorName = definitionName;
                     definitionName = "The " + decapitalize(definitionName) + " object";
                     buildDefinition(definitionName, anchorName, model);
@@ -191,10 +191,21 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
      * @param definitionName the name of the definition
      * @return true if the definition can be processed
      */
-    private boolean checkThatDefinitionIsNotInIgnoreList(String definitionName) {
+    private boolean checkThatDefinitionIsNotInIgnoreList(String definitionName, Model model) {
         if (definitionName.contains("PaginatedResult") || definitionName.contains("Doc")) {
             return false;
         }
+        if (model.getDescription()!= null && model.getDescription().contains("private")) {
+            if (!config.isPrivateDoc()) {
+                return false;
+            }
+            String[] descriptions = model.getDescription().split("private");
+            if (descriptions.length >1) {
+                model.setDescription(descriptions[1].trim());
+                return true;
+            }
+        }
+
         return !IGNORED_DEFINITIONS.contains(definitionName);
     }
 
