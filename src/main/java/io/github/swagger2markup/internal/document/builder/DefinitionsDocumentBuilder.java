@@ -107,9 +107,9 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
             Model model = globalContext.getSwagger().getDefinitions().get(definitionName);
             if (isNotBlank(definitionName)) {
                 if (checkThatDefinitionIsNotInIgnoreList(definitionName)) {
-
+                    String anchorName = definitionName;
                     definitionName = "The " + decapitalize(definitionName) + " object";
-                    buildDefinition(definitionName, model);
+                    buildDefinition(definitionName, anchorName, model);
                     if (logger.isInfoEnabled()) {
                         logger.info("Definition processed : '{}'", definitionName);
                     }
@@ -123,11 +123,13 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
     }
 
     public static String decapitalize(String string) {
-        if (string == null || string.length() == 0) {
+        if (string == null || string.length() < 2) {
             return string;
         }
         char c[] = string.toCharArray();
-        c[0] = Character.toLowerCase(c[0]);
+        if (!Character.isUpperCase(c[1])) {
+            c[0] = Character.toLowerCase(c[0]);
+        }
         return new String(c);
     }
 
@@ -165,11 +167,11 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
      * @param definitionName definition name to process
      * @param model          definition model to process
      */
-    private void buildDefinition(String definitionName, Model model) {
+    private void buildDefinition(String definitionName, String anchorName, Model model) {
 
         if (config.isSeparatedDefinitionsEnabled()) {
             MarkupDocBuilder defDocBuilder = copyMarkupDocBuilder();
-            buildDefinition(definitionName, model, defDocBuilder);
+            buildDefinition(definitionName, anchorName, model, defDocBuilder);
             Path definitionFile = outputPath.resolve(resolveDefinitionDocument(definitionName));
             defDocBuilder.writeToFileWithoutExtension(definitionFile, StandardCharsets.UTF_8);
             if (logger.isInfoEnabled()) {
@@ -179,7 +181,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
             definitionRef(definitionName, this.markupDocBuilder);
 
         } else {
-            buildDefinition(definitionName, model, this.markupDocBuilder);
+            buildDefinition(definitionName, anchorName, model, this.markupDocBuilder);
         }
     }
 
@@ -203,9 +205,9 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
      * @param model          the Swagger Model of the definition
      * @param docBuilder     the docbuilder do use for output
      */
-    private void buildDefinition(String definitionName, Model model, MarkupDocBuilder docBuilder) {
+    private void buildDefinition(String definitionName, String anchorName, Model model, MarkupDocBuilder docBuilder) {
         applyDefinitionsDocumentExtension(new Context(Position.DEFINITION_BEFORE, docBuilder, definitionName, model));
-        buildDefinitionTitle(definitionName, definitionName, docBuilder);
+        buildDefinitionTitle(definitionName, anchorName, docBuilder);
         applyDefinitionsDocumentExtension(new Context(Position.DEFINITION_BEGIN, docBuilder, definitionName, model));
         buildDescriptionParagraph(model, docBuilder);
         inlineDefinitions(typeSection(definitionName, model, docBuilder), definitionName, docBuilder);

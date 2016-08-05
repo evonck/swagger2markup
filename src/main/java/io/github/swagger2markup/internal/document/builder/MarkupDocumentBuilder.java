@@ -213,7 +213,7 @@ public abstract class MarkupDocumentBuilder {
             }
         }
         // Check if property is of type Doc for Map
-        propertyType =  SetDocMap(propertyType,definitionDocumentResolver);
+        propertyType = SetDocMap(propertyType, definitionDocumentResolver);
 
         return propertyType;
     }
@@ -252,8 +252,18 @@ public abstract class MarkupDocumentBuilder {
             Set<String> propertyNames = toKeySet(properties, config.getPropertyOrdering());
             for (String propertyName : propertyNames) {
                 Property property = properties.get(propertyName);
+                if (property.getDescription().contains("private")) {
+                    if (!config.isPrivateDoc()) {
+                        continue;
+                    } else {
+                        String[] descriptions = property.getDescription().split("private");
+                        if (descriptions.length > 0) {
+                            property.setDescription(descriptions[1].trim());
+                        }
+                    }
+                }
                 Type propertyType = PropertyUtils.getType(property, definitionDocumentResolver);
-                propertyType = getDocType(propertyType,definitionDocumentResolver);
+                propertyType = getDocType(propertyType, definitionDocumentResolver);
 
                 propertyType = createInlineType(propertyType, propertyName, uniquePrefix + " " + propertyName, inlineDefinitions);
 
@@ -349,7 +359,11 @@ public abstract class MarkupDocumentBuilder {
                 );
                 cells.add(content);
             }
-            docBuilder.tableWithColumnSpecs(cols, cells);
+            if (cells != null) {
+                docBuilder.tableWithColumnSpecs(cols, cells);
+            } else {
+                docBuilder.textLine(NO_CONTENT);
+            }
         } else {
             docBuilder.textLine(NO_CONTENT);
         }

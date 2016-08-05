@@ -730,7 +730,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             BodyParameter bodyParameter = (BodyParameter) parameter;
             if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel) {
                 RefModel ref = (RefModel) bodyParameter.getSchema();
-                return Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder)).replace("\n", " \\ \n");
+                return Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder, false)).replace("\n", " \\ \n");
             }
         }
         return null;

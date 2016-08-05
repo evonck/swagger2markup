@@ -39,9 +39,9 @@ public class ExamplesUtil {
      * Generates a Map of response examples
      *
      * @param generateMissingExamples specifies the missing examples should be generated
-     * @param operation the Swagger Operation
-     * @param definitions the map of definitions
-     * @param markupDocBuilder the markup builder
+     * @param operation               the Swagger Operation
+     * @param definitions             the map of definitions
+     * @param markupDocBuilder        the markup builder
      * @return map containing response examples.
      */
     public static Map<String, Object> generateResponseExampleMap(boolean generateMissingExamples, Operation operation, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
@@ -49,7 +49,7 @@ public class ExamplesUtil {
         Map<String, Response> responses = operation.getResponses();
         if (responses != null)
             for (Map.Entry<String, Response> responseEntry : responses.entrySet()) {
-                if ( responseEntry.getKey().equals("default") ||Integer.parseInt(responseEntry.getKey()) >= 300) {
+                if (responseEntry.getKey().equals("default") || Integer.parseInt(responseEntry.getKey()) >= 300) {
                     continue;
                 }
                 Response response = responseEntry.getValue();
@@ -61,30 +61,30 @@ public class ExamplesUtil {
 
                         if (example == null && schema instanceof RefProperty) {
                             String simpleRef = ((RefProperty) schema).getSimpleRef();
-                            example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder);
+                            example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder, true);
                         }
 
                         if (example == null && schema instanceof ArrayProperty) {
                             Property property = ((ArrayProperty) schema).getItems();
                             example = property.getExample();
-                            if (example == null && property instanceof RefProperty ) {
+                            if (example == null && property instanceof RefProperty) {
                                 RefProperty refProperty = (RefProperty) property;
-                                example = generateExampleForArrayRefModel(generateMissingExamples, refProperty.getSimpleRef(), definitions, markupDocBuilder);
+                                example = generateExampleForArrayRefModel(generateMissingExamples, refProperty.getSimpleRef(), definitions, markupDocBuilder, true);
                             }
-                            if ( example == null && generateMissingExamples ) {
+                            if (example == null && generateMissingExamples) {
                                 String exampleString = "[";
                                 Object exampleObject = PropertyUtils.generateExample(schema, markupDocBuilder);
                                 example = exampleString + exampleObject.toString() + "]";
                             }
                         }
                         if (schema instanceof MapProperty) {
-                            example = generateExampleForMapProperty((MapProperty) schema, markupDocBuilder,definitions);
+                            example = generateExampleForMapProperty((MapProperty) schema, markupDocBuilder, definitions, true);
                         }
 
                         if (example == null && generateMissingExamples) {
                             example = PropertyUtils.generateExample(schema, markupDocBuilder);
                         }
-                        if (schema.getExample() == null && example!= null) {
+                        if (schema.getExample() == null && example != null) {
                             schema.setExample(example);
                         }
                     }
@@ -93,7 +93,7 @@ public class ExamplesUtil {
                 if (example != null)
                     examples.put(responseEntry.getKey(), example);
 
-                if(response.getExamples() == null && example != null) {
+                if (response.getExamples() == null && example != null) {
                     response.setExamples(examples);
                 }
             }
@@ -105,9 +105,9 @@ public class ExamplesUtil {
      * Generates examples for request
      *
      * @param generateMissingExamples specifies the missing examples should be generated
-     * @param pathOperation the Swagger Operation
-     * @param definitions the map of definitions
-     * @param markupDocBuilder the markup builder
+     * @param pathOperation           the Swagger Operation
+     * @param definitions             the map of definitions
+     * @param markupDocBuilder        the markup builder
      * @return an Optional with the example content
      */
     public static Map<String, Object> generateRequestExampleMap(boolean generateMissingExamples, PathOperation pathOperation, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
@@ -126,17 +126,17 @@ public class ExamplesUtil {
                     Model schema = ((BodyParameter) parameter).getSchema();
                     if (schema instanceof RefModel) {
                         String simpleRef = ((RefModel) schema).getSimpleRef();
-                        example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder);
+                        example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder, false);
                     } else if (generateMissingExamples) {
                         if (schema instanceof ComposedModel) {
                             example = exampleMapForProperties(getPropertiesForComposedModel(
-                                    (ComposedModel) schema, definitions), definitions, markupDocBuilder);
+                                    (ComposedModel) schema, definitions), definitions, markupDocBuilder, false);
                         } else if (schema instanceof ArrayModel) {
-                            example = generateExampleForArrayModel((ArrayModel) schema, definitions, markupDocBuilder);
+                            example = generateExampleForArrayModel((ArrayModel) schema, definitions, markupDocBuilder, false);
                         } else {
                             example = schema.getExample();
                             if (example == null) {
-                                example = exampleMapForProperties(schema.getProperties(), definitions, markupDocBuilder);
+                                example = exampleMapForProperties(schema.getProperties(), definitions, markupDocBuilder, false);
                             }
                         }
                     }
@@ -154,7 +154,7 @@ public class ExamplesUtil {
                             }
                         }
                         if (abstractSerializableParameterExample == null) {
-                            abstractSerializableParameterExample = ParameterUtils.generateExample((AbstractSerializableParameter)parameter);
+                            abstractSerializableParameterExample = ParameterUtils.generateExample((AbstractSerializableParameter) parameter);
                         }
                     }
                     if (parameter instanceof PathParameter) {
@@ -177,7 +177,7 @@ public class ExamplesUtil {
                 }
             } else if (parameter instanceof RefParameter) {
                 String simpleRef = ((RefParameter) parameter).getSimpleRef();
-                example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder);
+                example = generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder, false);
             }
 
             if (example != null)
@@ -191,23 +191,23 @@ public class ExamplesUtil {
      * Generates an example object from a simple reference
      *
      * @param generateMissingExamples specifies the missing examples should be generated
-     * @param simpleRef the simple reference string
-     * @param definitions the map of definitions
-     * @param markupDocBuilder the markup builder
+     * @param simpleRef               the simple reference string
+     * @param definitions             the map of definitions
+     * @param markupDocBuilder        the markup builder
      * @return returns an Object or Map of examples
      */
-    public static Object generateExampleForRefModel(boolean generateMissingExamples, String simpleRef, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
+    public static Object generateExampleForRefModel(boolean generateMissingExamples, String simpleRef, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder, boolean isResponse) {
         Model model = definitions.get(simpleRef);
         Object example = null;
         if (model != null) {
             example = model.getExample();
             if (example == null && generateMissingExamples) {
                 if (model instanceof ComposedModel) {
-                    example = exampleMapForProperties(getPropertiesForComposedModel((ComposedModel) model, definitions), definitions, markupDocBuilder);
-                } else if (simpleRef.contains("Doc")){
-                    example =  model.getProperties().entrySet().iterator().next().getValue().getExample();
-                }else{
-                    example = exampleMapForProperties(model.getProperties(), definitions, markupDocBuilder);
+                    example = exampleMapForProperties(getPropertiesForComposedModel((ComposedModel) model, definitions), definitions, markupDocBuilder, isResponse);
+                } else if (simpleRef.contains("Doc")) {
+                    example = model.getProperties().entrySet().iterator().next().getValue().getExample();
+                } else {
+                    example = exampleMapForProperties(model.getProperties(), definitions, markupDocBuilder, isResponse);
                 }
             }
         }
@@ -215,8 +215,8 @@ public class ExamplesUtil {
     }
 
 
-    public static Object generateExampleForArrayRefModel(boolean generateMissingExamples, String simpleRef, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
-        return new Object[]{generateExampleForRefModel(generateMissingExamples,simpleRef,definitions,markupDocBuilder)};
+    public static Object generateExampleForArrayRefModel(boolean generateMissingExamples, String simpleRef, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder, boolean isResponse) {
+        return new Object[]{generateExampleForRefModel(generateMissingExamples, simpleRef, definitions, markupDocBuilder, isResponse)};
     }
 
 
@@ -249,24 +249,32 @@ public class ExamplesUtil {
      * Generates a map of examples from a map of properties. If defined examples are found, those are used. Otherwise,
      * examples are generated from the type.
      *
-     * @param properties the map of properties
-     * @param definitions the map of definitions
+     * @param properties       the map of properties
+     * @param definitions      the map of definitions
      * @param markupDocBuilder the markup builder
-     *
      * @return a Map of examples
      */
-    public static Map<String, Object> exampleMapForProperties(Map<String, Property> properties, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
+    public static Map<String, Object> exampleMapForProperties(Map<String, Property> properties, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder, boolean isResponse) {
         Map<String, Object> exampleMap = new LinkedHashMap<>();
         if (properties != null) {
             for (Map.Entry<String, Property> property : properties.entrySet()) {
+                if (property.getValue().getDescription() != null && property.getValue().getDescription().contains("private")) {
+                    continue;
+                }
+                if (!isResponse && !property.getValue().getRequired()) {
+                    continue;
+                }
+                if (!isResponse && property.getValue().getReadOnly() != null && property.getValue().getReadOnly()) {
+                    continue;
+                }
                 Object exampleObject = property.getValue().getExample();
                 if (exampleObject == null) {
                     if (property.getValue() instanceof RefProperty) {
-                        exampleObject = generateExampleForRefModel(true, ((RefProperty) property.getValue()).getSimpleRef(), definitions, markupDocBuilder);
+                        exampleObject = generateExampleForRefModel(true, ((RefProperty) property.getValue()).getSimpleRef(), definitions, markupDocBuilder, isResponse);
                     } else if (property.getValue() instanceof ArrayProperty) {
-                        exampleObject = generateExampleForArrayProperty((ArrayProperty) property.getValue(), definitions, markupDocBuilder);
+                        exampleObject = generateExampleForArrayProperty((ArrayProperty) property.getValue(), definitions, markupDocBuilder, isResponse);
                     } else if (property.getValue() instanceof MapProperty) {
-                        exampleObject = generateExampleForMapProperty((MapProperty) property.getValue(), markupDocBuilder, definitions);
+                        exampleObject = generateExampleForMapProperty((MapProperty) property.getValue(), markupDocBuilder, definitions, isResponse);
                     }
                     if (exampleObject == null) {
                         Property valueProperty = property.getValue();
@@ -279,7 +287,7 @@ public class ExamplesUtil {
         return exampleMap;
     }
 
-    public static Object generateExampleForMapProperty(MapProperty property, MarkupDocBuilder markupDocBuilder, Map<String,Model> definitions) {
+    public static Object generateExampleForMapProperty(MapProperty property, MarkupDocBuilder markupDocBuilder, Map<String, Model> definitions, boolean isResponse) {
         if (property.getExample() != null) {
             return property.getExample();
         }
@@ -317,19 +325,19 @@ public class ExamplesUtil {
         return exampleMap;
     }
 
-    public static Object generateExampleForArrayModel(ArrayModel model, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
+    public static Object generateExampleForArrayModel(ArrayModel model, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder, boolean isResponse) {
         if (model.getExample() != null) {
             return model.getExample();
         } else if (model.getProperties() != null) {
-            return new Object[]{exampleMapForProperties(model.getProperties(), definitions, markupDocBuilder)};
+            return new Object[]{exampleMapForProperties(model.getProperties(), definitions, markupDocBuilder, isResponse)};
         } else {
             Property itemProperty = model.getItems();
             if (itemProperty.getExample() != null) {
                 return new Object[]{itemProperty.getExample()};
             } else if (itemProperty instanceof ArrayProperty) {
-                return new Object[]{generateExampleForArrayProperty((ArrayProperty) itemProperty, definitions, markupDocBuilder)};
+                return new Object[]{generateExampleForArrayProperty((ArrayProperty) itemProperty, definitions, markupDocBuilder, isResponse)};
             } else if (itemProperty instanceof RefProperty) {
-                return new Object[]{generateExampleForRefModel(true, ((RefProperty) itemProperty).getSimpleRef(), definitions, markupDocBuilder)};
+                return new Object[]{generateExampleForRefModel(true, ((RefProperty) itemProperty).getSimpleRef(), definitions, markupDocBuilder, isResponse)};
             } else {
                 return new Object[]{PropertyUtils.generateExample(itemProperty, markupDocBuilder)};
             }
@@ -339,23 +347,22 @@ public class ExamplesUtil {
     /**
      * Generates examples from an ArrayProperty
      *
-     * @param value ArrayProperty
-     * @param definitions map of definitions
+     * @param value            ArrayProperty
+     * @param definitions      map of definitions
      * @param markupDocBuilder the markup builder
      * @return array of Object
      */
-    public static Object[] generateExampleForArrayProperty(ArrayProperty value, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder) {
+    public static Object[] generateExampleForArrayProperty(ArrayProperty value, Map<String, Model> definitions, MarkupDocBuilder markupDocBuilder, boolean isResponse) {
         Property property = value.getItems();
         if (property.getExample() != null) {
             return new Object[]{property.getExample()};
         } else if (property instanceof ArrayProperty) {
-            return new Object[]{generateExampleForArrayProperty((ArrayProperty) property, definitions, markupDocBuilder)};
+            return new Object[]{generateExampleForArrayProperty((ArrayProperty) property, definitions, markupDocBuilder, isResponse)};
         } else if (property instanceof RefProperty) {
-            return new Object[]{generateExampleForRefModel(true, ((RefProperty) property).getSimpleRef(), definitions, markupDocBuilder)};
-        } else if (property instanceof MapProperty){
-            return new Object[]{generateExampleForMapProperty((MapProperty) property, markupDocBuilder,definitions)};
-        }
-        else {
+            return new Object[]{generateExampleForRefModel(true, ((RefProperty) property).getSimpleRef(), definitions, markupDocBuilder, isResponse)};
+        } else if (property instanceof MapProperty) {
+            return new Object[]{generateExampleForMapProperty((MapProperty) property, markupDocBuilder, definitions, isResponse)};
+        } else {
             return new Object[]{PropertyUtils.generateExample(property, markupDocBuilder)};
         }
     }
