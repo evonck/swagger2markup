@@ -269,11 +269,6 @@ public abstract class MarkupDocumentBuilder {
                 propertyType = createInlineType(propertyType, propertyName, uniquePrefix + " " + propertyName, inlineDefinitions);
 
                 Object example = PropertyUtils.getExample(config.isGeneratedExamplesEnabled(), property, markupDocBuilder, globalContext.getSwagger().getDefinitions());
-                String exampleString = example.toString();
-                if (exampleString.contains("{")) {
-                    exampleString.replaceAll(NEW_LINES, Matcher.quoteReplacement(""));
-                    example = exampleString;
-                }
 
                 Object defaultValue = PropertyUtils.getDefaultValue(property);
 
@@ -355,7 +350,12 @@ public abstract class MarkupDocumentBuilder {
                 if (example != null) {
                     if (isNotBlank(description) || defaultValue != null)
                         descriptionContent.newLine(true);
-                    descriptionContent.boldText(EXAMPLE_COLUMN).text(COLON).literalText(Json.pretty(example));
+                    String exampleString = (Json.pretty(example));
+                    if (exampleString.contains("{")) {
+                        exampleString =  exampleString.replaceAll(NEW_LINES, Matcher.quoteReplacement(" "));
+                    }
+                    descriptionContent.boldText(EXAMPLE_COLUMN).text(COLON).literalText(exampleString);
+
                 }
 
                 List<String> content = Arrays.asList(
