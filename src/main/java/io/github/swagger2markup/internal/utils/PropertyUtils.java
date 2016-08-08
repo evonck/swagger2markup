@@ -291,7 +291,7 @@ public final class PropertyUtils {
                 return "string";
             case "ref":
                 if (property instanceof RefProperty) {
-                    return markupDocBuilder.copy(false).crossReference(((RefProperty) property).getSimpleRef()).toString();
+                    return ((RefProperty) property).getSimpleRef().toString();
                 }
             default:
                 return property.getType();
@@ -329,7 +329,7 @@ public final class PropertyUtils {
                         // Get Example from first Param
                         return definitions.get(((RefProperty) property).getSimpleRef()).getProperties().entrySet().iterator().next().getValue().getExample();
                     }
-                    return markupDocBuilder.copy(false).crossReference(((RefProperty) property).getSimpleRef()).toString();
+                    return ((RefProperty) property).getSimpleRef().toString();
                 }
             default:
                 return property.getType();

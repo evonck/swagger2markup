@@ -278,7 +278,7 @@ public class ExamplesUtil {
                     }
                     if (exampleObject == null) {
                         Property valueProperty = property.getValue();
-                        exampleObject = PropertyUtils.generateExample(valueProperty, markupDocBuilder);
+                        exampleObject = PropertyUtils.generateExample(valueProperty, markupDocBuilder,definitions);
                     }
                 }
                 exampleMap.put(property.getKey(), exampleObject);
