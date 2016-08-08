@@ -178,6 +178,20 @@ public class Swagger2MarkupConverter {
     }
 
     /**
+     * Converts the Swagger specification model into the given {@code outputDirectory}.
+     *
+     * @param outputDirectory the output directory path
+     */
+    public void toModelFolder(Path outputDirectory, String modelName){
+        Validate.notNull(outputDirectory, "outputDirectory must not be null");
+
+//        new OverviewDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getOverviewDocument()), StandardCharsets.UTF_8);
+//        new PathsDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getPathsDocument()), StandardCharsets.UTF_8);
+//        new DefinitionsDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getDefinitionsDocument()), StandardCharsets.UTF_8);
+//        new SecurityDocumentBuilder(context, extensionRegistry, outputDirectory).build().writeToFile(outputDirectory.resolve(context.config.getSecurityDocument()), StandardCharsets.UTF_8);
+    }
+
+    /**
      * Converts the Swagger specification into the {@code outputPath} which can be either a directory (e.g /tmp) or a file without extension (e.g /tmp/swagger).
      * Internally the method invokes either {@code toFolder} or {@code toFile}. If the {@code outputPath} is a directory, the directory must exist.
      * Otherwise it cannot be determined if the {@code outputPath} is a directory or not.

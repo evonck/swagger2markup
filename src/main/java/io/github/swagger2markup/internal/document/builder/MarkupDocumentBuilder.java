@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Matcher;
 
 import static io.github.swagger2markup.internal.utils.MapUtils.toKeySet;
 import static org.apache.commons.lang3.StringUtils.defaultString;
@@ -62,6 +63,7 @@ public abstract class MarkupDocumentBuilder {
     protected final String MINVALUE_COLUMN;
     protected final String MAXVALUE_COLUMN;
 
+    protected static final String NEW_LINES = "\\r\\n|\\r|\\n";
 
     protected final String EXAMPLE_COLUMN;
     protected final String SCHEMA_COLUMN;
@@ -195,7 +197,6 @@ public abstract class MarkupDocumentBuilder {
             return type;
     }
 
-
     protected Type getDocType(Type propertyType, DefinitionDocumentResolver definitionDocumentResolver) {
         // Check if property is of type Doc for Array
         if (propertyType instanceof ArrayType) {
@@ -268,6 +269,11 @@ public abstract class MarkupDocumentBuilder {
                 propertyType = createInlineType(propertyType, propertyName, uniquePrefix + " " + propertyName, inlineDefinitions);
 
                 Object example = PropertyUtils.getExample(config.isGeneratedExamplesEnabled(), property, markupDocBuilder, globalContext.getSwagger().getDefinitions());
+                String exampleString = example.toString();
+                if (exampleString.contains("{")) {
+                    exampleString.replaceAll(NEW_LINES, Matcher.quoteReplacement(""));
+                    example = exampleString;
+                }
 
                 Object defaultValue = PropertyUtils.getDefaultValue(property);
 

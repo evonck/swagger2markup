@@ -206,6 +206,7 @@ public class DefinitionsDocumentBuilder extends MarkupDocumentBuilder {
             }
         }
 
+
         return !IGNORED_DEFINITIONS.contains(definitionName);
     }
 
