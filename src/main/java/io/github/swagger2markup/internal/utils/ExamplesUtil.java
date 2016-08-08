@@ -298,30 +298,16 @@ public class ExamplesUtil {
         }
         if (valueProperty instanceof RefProperty) {
             RefProperty refProperty = (RefProperty) valueProperty;
+            String simpleRef = ((RefProperty) valueProperty).getSimpleRef();
             if (((RefProperty) valueProperty).getSimpleRef().contains("Doc")) {
-                String simpleRef = ((RefProperty) valueProperty).getSimpleRef();
                 // Hard Coded the key is not set up in the swagger file
                 exampleMap.put("string", definitions.get(simpleRef).getProperties().entrySet().iterator().next().getValue().getExample());
             } else {
-                exampleMap.put("string", PropertyUtils.generateExample(valueProperty, markupDocBuilder));
-
+                exampleMap.put("string", generateExampleForRefModel(true,simpleRef, definitions,markupDocBuilder,isResponse));
             }
         } else {
             exampleMap.put("string", PropertyUtils.generateExample(valueProperty, markupDocBuilder));
         }
-        return exampleMap;
-    }
-
-    public static Object generateExampleForMapProperty(MapProperty property, MarkupDocBuilder markupDocBuilder) {
-        if (property.getExample() != null) {
-            return property.getExample();
-        }
-        Map<String, Object> exampleMap = new LinkedHashMap<>();
-        Property valueProperty = property.getAdditionalProperties();
-        if (valueProperty.getExample() != null) {
-            return valueProperty.getExample();
-        }
-        exampleMap.put("string", PropertyUtils.generateExample(valueProperty, markupDocBuilder));
         return exampleMap;
     }
 

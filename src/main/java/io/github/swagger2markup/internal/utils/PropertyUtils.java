@@ -240,47 +240,6 @@ public final class PropertyUtils {
      * @param markupDocBuilder doc builder
      * @return property example display string
      */
-    public static Object getExample(boolean generateMissingExamples, Property property, MarkupDocBuilder markupDocBuilder) {
-        Validate.notNull(property, "property must not be null");
-        Object examplesValue = null;
-        if (property.getExample() != null) {
-            examplesValue = property.getExample();
-        } else if (property instanceof MapProperty) {
-            Property additionalProperty = ((MapProperty) property).getAdditionalProperties();
-            if (additionalProperty.getExample() != null) {
-                examplesValue = additionalProperty.getExample();
-            } else if (generateMissingExamples) {
-                Map<String, Object> exampleMap = new HashMap<>();
-                exampleMap.put("string", generateExample(additionalProperty, markupDocBuilder));
-                examplesValue = exampleMap;
-            }
-        } else if (property instanceof ArrayProperty) {
-            if (generateMissingExamples) {
-                Property itemProperty = ((ArrayProperty) property).getItems();
-                List<Object> exampleArray = new ArrayList<>();
-                if ( itemProperty instanceof  MapProperty) {
-                    exampleArray.add(getExample(generateMissingExamples, itemProperty, markupDocBuilder));
-                } else {
-                    exampleArray.add(generateExample(itemProperty, markupDocBuilder));
-                }
-
-                examplesValue = exampleArray;
-            }
-        } else if (generateMissingExamples) {
-            examplesValue = generateExample(property, markupDocBuilder);
-        }
-
-        return examplesValue;
-    }
-
-    /**
-     * Return example display string for the given {@code property}.
-     *
-     * @param generateMissingExamples specifies if missing examples should be generated
-     * @param property         property
-     * @param markupDocBuilder doc builder
-     * @return property example display string
-     */
     public static Object getExample(boolean generateMissingExamples, Property property, MarkupDocBuilder markupDocBuilder, Map<String, Model> definitions) {
         Validate.notNull(property, "property must not be null");
         Object examplesValue = null;
