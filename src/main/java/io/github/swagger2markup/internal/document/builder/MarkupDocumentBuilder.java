@@ -253,7 +253,7 @@ public abstract class MarkupDocumentBuilder {
             Set<String> propertyNames = toKeySet(properties, config.getPropertyOrdering());
             for (String propertyName : propertyNames) {
                 Property property = properties.get(propertyName);
-                if (property.getDescription().contains("private")) {
+                if (property.getDescription()!= null && property.getDescription().contains("private")) {
                     if (!config.isPrivateDoc()) {
                         continue;
                     } else {
