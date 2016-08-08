@@ -678,7 +678,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
         }
         if (operation.getMethod() != HttpMethod.GET) {
             curlValue += " \\ \n";
-            curlValue += " -X " + operation.getMethod();
+            curlValue += "-X " + operation.getMethod();
         }
         return curlValue;
     }

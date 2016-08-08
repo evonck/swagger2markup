@@ -42,9 +42,9 @@ public class ArrayType extends Type {
     public String displaySchema(MarkupDocBuilder docBuilder) {
         String ofTypeDisplay = ofType.displaySchema(docBuilder);
         if (isNotBlank(this.collectionFormat))
-            return String.format("< %s > array(%s)", ofTypeDisplay, collectionFormat);
+            return String.format("array < %s >", collectionFormat);
         else
-            return String.format("< %s > array", ofTypeDisplay);
+            return String.format("array < %s >", ofTypeDisplay);
     }
 
     public String getCollectionFormat() {
