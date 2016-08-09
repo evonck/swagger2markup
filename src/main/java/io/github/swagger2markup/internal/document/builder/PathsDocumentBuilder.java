@@ -455,8 +455,8 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             host = config.getHost();
         }
         buildSectionTitle(REQUEST_HEADER, docBuilder);
-        for (Scheme scheme : schemes) {
-            docBuilder.textLine("`" + method + " " + scheme.toString().toLowerCase() + "://" + host + path + "`");
+        if (schemes.size() !=0) {
+            docBuilder.textLine("`" + method + " " + schemes.get(0).toString().toLowerCase() + "://" + host + path + "`");
             docBuilder.textLine(" ");
         }
     }
