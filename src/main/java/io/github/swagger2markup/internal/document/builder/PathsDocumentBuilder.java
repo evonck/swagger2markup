@@ -632,6 +632,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
     private void buildExamplesCurlSectionInfo(PathOperation operation, MarkupDocBuilder docBuilder) {
         String curlValue = "curl \"" + basePath + operation.getPath();
         String headerValue = "";
+        headerValue = generateCurlHeaderParam(headerValue, "Content-Type", "application/json");
         String bodyValue = "";
         String queryValue = "";
         List<Parameter> parameters = operation.getOperation().getParameters();
@@ -730,7 +731,7 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
             BodyParameter bodyParameter = (BodyParameter) parameter;
             if (bodyParameter.getSchema() != null && bodyParameter.getSchema() instanceof RefModel) {
                 RefModel ref = (RefModel) bodyParameter.getSchema();
-                return Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder, false)).replace("\n", " \\ \n");
+                return Json.pretty(ExamplesUtil.generateExampleForRefModel(true, ref.getSimpleRef(), globalContext.getSwagger().getDefinitions(), docBuilder, false));
             }
         }
         return null;
