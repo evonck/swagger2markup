@@ -469,7 +469,14 @@ public class PathsDocumentBuilder extends MarkupDocumentBuilder {
      * @return true if parameter can be displayed
      */
     private boolean filterParameter(Parameter parameter) {
-        return (!config.isFlatBodyEnabled() || !StringUtils.equals(parameter.getIn(), "body"));
+        if (parameter.getDescription().startsWith("private") && !config.isPrivateDoc()) {
+            return false;
+        }
+        if (!config.isFlatBodyEnabled() || !StringUtils.equals(parameter.getIn(), "body")) {
+            return true;
+        }
+
+        return true;
     }
 
     private List<ObjectType> buildParametersSection(PathOperation operation, MarkupDocBuilder docBuilder) {
